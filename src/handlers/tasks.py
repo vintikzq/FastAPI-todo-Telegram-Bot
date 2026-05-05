@@ -19,7 +19,18 @@ async def get_all_tasks(message: Message, task_service: TaskService):
         user_id = message.from_user.id if message.from_user else None
         if user_id is not None:
             res = await task_service.get_tasks(user_id)
-            await message.answer(f"{len(res)}")
+            if res:
+                messages = []
+                for data in res:
+                    date = data.friendly_date
+                    priority = data.emoji_priority
+                    status = data.emoji_status
+                    description = data.not_none_description
+                    messages.append(
+                        f"{priority} <b>{data.name}</b> {date} {status}\n<i>{description}</i>")
+                await message.answer("\n".join(messages), parse_mode='HTML')
+            if not res:
+                await message.answer("Your tasks list is empty now!")
     except httpx.HTTPStatusError as e:
         if e.response.status_code == 401:
             await message.answer("Need authorize first.\nUse /login.")
