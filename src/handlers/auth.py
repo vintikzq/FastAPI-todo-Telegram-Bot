@@ -1,13 +1,13 @@
 import logging
 
-from aiogram import Router
-from aiogram.filters import Command
+from aiogram import F, Router
+from aiogram.filters import Command, or_f
 from aiogram.fsm.context import FSMContext
 from aiogram.types import Message
 import httpx
 
 from src.services.auth import AuthService
-from src.states.auth import AuthStates
+from src.states.auth import AuthStates, RegisterStates
 from src.storage.tokens import TokenStorage
 
 
@@ -16,7 +16,7 @@ router = Router()
 logger = logging.getLogger(__name__)
 
 
-@router.message(Command('login'))
+@router.message(or_f(Command('login'), F.text == 'Login'))
 async def login_user(message: Message, state: FSMContext):
     await message.answer("Enter your login")
     await state.set_state(AuthStates.waiting_for_login)
@@ -49,5 +49,39 @@ async def process_login_user(message: Message, state: FSMContext, auth_service: 
         else:
             logger.error(
                 f"Login Failed: {e.response.status_code} - {e.response.text}")
+            await message.answer("Something went wrong in server")
+    await state.clear()
+
+
+@router.message(or_f(Command('register'), F.text == 'Registration'))
+async def create_user(message: Message, state: FSMContext):
+    await message.answer("Enter login")
+    await state.set_state(RegisterStates.waiting_for_login)
+
+
+@router.message(RegisterStates.waiting_for_login)
+async def get_login_and_password_create_user(message: Message, state: FSMContext):
+    await state.update_data(login=message.text)
+    await message.answer("Enter password")
+    await state.set_state(RegisterStates.waiting_for_password)
+
+
+@router.message(RegisterStates.waiting_for_password)
+async def process_registration(message: Message, state: FSMContext, auth_service: AuthService):
+    try:
+        await state.update_data(password=message.text)
+        user_data = await state.get_data()
+        response = await auth_service.create_user(
+            user_data['login'], user_data['password'])
+        await message.delete()
+        await message.answer(f"User with login {response['login']} is created")
+    except httpx.HTTPStatusError as e:
+        if e.response.status_code == 422:
+            await message.answer("Login should have at least 3 characters and\nPassword should have at least 8 characters")
+        if e.response.status_code == 400:
+            await message.answer("User with this login already exist")
+        else:
+            logger.error(
+                f"Register Failed: {e.response.status_code} - {e.response.text}")
             await message.answer("Something went wrong in server")
     await state.clear()
