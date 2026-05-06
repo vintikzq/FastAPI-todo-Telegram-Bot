@@ -2,11 +2,7 @@ import logging
 from typing import Any, Awaitable, Callable
 
 from aiogram import BaseMiddleware
-from aiogram.types import Message, TelegramObject
-import httpx
-
-from src.services.auth import AuthService
-from src.storage.tokens import TokenStorage
+from aiogram.types import Message
 
 logger = logging.getLogger(__name__)
 

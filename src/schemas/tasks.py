@@ -39,3 +39,10 @@ class TaskResponse(BaseModel):
     @property
     def not_none_description(self) -> str:
         return self.description if self.description else ""
+
+    def format_to_html(self) -> str:
+        date = self.friendly_date
+        priority = self.emoji_priority
+        status = self.emoji_status
+        description = self.not_none_description
+        return f"{priority} <b>{self.name}</b> {date} {status}\n<i>{description}</i>"
