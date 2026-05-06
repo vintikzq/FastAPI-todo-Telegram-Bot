@@ -7,6 +7,7 @@ from src.handlers.common import router as common_handler_router
 from src.handlers.auth import router as auth_handler_router
 from src.handlers.tasks import router as tasks_handler_router
 from src.core.config import settings
+from src.middlewares.auth import AuthMiddleware
 from src.services.auth import AuthService
 from src.services.tasks import TaskService
 from src.storage.tokens import TokenStorage
@@ -20,6 +21,7 @@ logging.basicConfig(
 async def main():
     bot = Bot(token=settings.BOT_TOKEN)
     dp = Dispatcher()
+    dp.message.middleware(AuthMiddleware())
     dp.include_router(common_handler_router)
     dp.include_router(auth_handler_router)
     dp.include_router(tasks_handler_router)
