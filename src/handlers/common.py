@@ -1,13 +1,13 @@
 from aiogram import Router
 from aiogram.filters import Command
-from aiogram.types import Message
+from aiogram.types import Message, User
 
-from src.keyboards.auth_menu import get_auth_keyboard
+from src.keyboards.main_menu import get_main_menu_keyboard
 
 
 router = Router()
 
 
 @router.message(Command('start'))
-async def start_handler(message: Message):
-    await message.answer("Hello there! Choose action:", reply_markup=await get_auth_keyboard())
+async def start_handler(message: Message, current_user: User):
+    await message.answer(f"Welcome, {current_user.first_name}! I'm your task assistant. Use the menu below to manage your goals.", reply_markup=get_main_menu_keyboard())

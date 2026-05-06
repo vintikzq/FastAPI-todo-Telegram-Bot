@@ -23,6 +23,7 @@ class AuthMiddleware(BaseMiddleware):
         user = event.from_user
         if not user:
             return
+        data['current_user'] = user
         user_id = user.id
         token = await auth_service.get_auth_token(user_id, token_storage)
         if not token:
