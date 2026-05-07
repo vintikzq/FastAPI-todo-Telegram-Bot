@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from src.schemas.enums import TodoPriority, TodoStatus
 
@@ -18,7 +18,7 @@ class TaskResponse(BaseModel):
     def friendly_date(self) -> str:
         if not self.due_date:
             return ""
-        return self.due_date.strftime("%d.%m %H:%M")
+        return self.due_date.strftime("%d.%m")
 
     @property
     def emoji_status(self) -> str:
@@ -46,3 +46,11 @@ class TaskResponse(BaseModel):
         status = self.emoji_status
         description = self.not_none_description
         return f"{priority} <b>{self.name}</b> {date} {status}\n<i>{description}</i>"
+
+
+class TaskRequest(BaseModel):
+    model_config = ConfigDict(extra='ignore')
+    name: str
+    priority: TodoPriority
+    description: str | None
+    due_date: str | None

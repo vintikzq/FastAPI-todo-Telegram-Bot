@@ -10,6 +10,6 @@ class TokenStorage():
 
     async def delete_token(self, user_id: int):
         del self.token_storage[user_id]
-        
+
     async def is_authorized(self, user_id: int):
         return user_id in self.token_storage

@@ -21,7 +21,7 @@ class AuthMiddleware(BaseMiddleware):
             return
         data['current_user'] = user
         user_id = user.id
-        token = await auth_service.get_auth_token(user_id, token_storage)
+        token = await auth_service.get_auth_token(user_id)
         if not token:
             return await event.answer("Authorization error. Please try again later.")
 

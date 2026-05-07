@@ -1,7 +1,6 @@
 from aiogram import F, Router
 from aiogram.types import Message, User
 
-
 from src.schemas.enums import MenuButtons
 from src.services.tasks import TaskService
 

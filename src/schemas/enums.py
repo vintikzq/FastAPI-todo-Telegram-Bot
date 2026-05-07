@@ -17,3 +17,4 @@ class MenuButtons(StrEnum):
     MY_TASKS = '🗂️ My tasks'
     CREATE_TASK = '✏️ Create task'
     STATS = "📊 Statistics"
+
