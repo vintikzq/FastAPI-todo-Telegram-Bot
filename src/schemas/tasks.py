@@ -47,6 +47,10 @@ class TaskResponse(BaseModel):
         description = self.not_none_description
         return f"{priority} <b>{self.name}</b> {date} {status}\n<i>{description}</i>"
 
+    def friendly_format_for_buttons(self) -> str:
+        status = self.emoji_status
+        return f"{status} {self.name}"
+
 
 class TaskRequest(BaseModel):
     model_config = ConfigDict(extra='ignore')

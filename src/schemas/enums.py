@@ -1,4 +1,4 @@
-from enum import StrEnum, auto
+from enum import IntEnum, StrEnum, auto
 
 
 class TodoStatus(StrEnum):
@@ -16,5 +16,17 @@ class TodoPriority(StrEnum):
 class MenuButtons(StrEnum):
     MY_TASKS = '🗂️ My tasks'
     CREATE_TASK = '✏️ Create task'
-    STATS = "📊 Statistics"
+    STATS = '📊 Statistics'
 
+
+class ActionsNav(IntEnum):
+    LIST = 1
+    VIEW = 2
+    PAGE_UP = 3
+    PAGE_DOWN = 4
+    SKIP = 5
+
+
+class ActionsView(IntEnum):
+    DELETE = 1
+    UPDATE = 2
