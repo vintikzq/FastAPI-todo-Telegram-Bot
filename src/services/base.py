@@ -24,6 +24,9 @@ class BaseClient:
             else:
                 response = await self.session.request(method, url, headers=headers, json=data, params=params)
             response.raise_for_status()
+
+            if response.status_code == 204:
+                return {}
             return response.json()
         except httpx.HTTPStatusError as e:
             if e.response.status_code == 401 and user_id is not None:

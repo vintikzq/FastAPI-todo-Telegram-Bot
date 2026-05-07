@@ -28,3 +28,7 @@ class TaskService(BaseClient):
         token = await self.token_storage.get_token(user_id)
         data = await self._make_request('get', f'/tasks/{task_id}', user_id, headers={'Authorization': f"Bearer {token}"})
         return TaskResponse(**data)
+
+    async def delete_task_by_id(self, user_id: int, task_id: int):
+        token = await self.token_storage.get_token(user_id)
+        await self._make_request('delete', f'/tasks/{task_id}', user_id, headers={'Authorization': f"Bearer {token}"})

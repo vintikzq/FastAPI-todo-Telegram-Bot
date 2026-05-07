@@ -1,10 +1,12 @@
+import asyncio
+
 from aiogram import F, Router
 from aiogram.types import CallbackQuery, Message, User
 import httpx
 
 from src.keyboards.task_menu import get_navigation_buttons, get_task_buttons
-from src.schemas.callbacks import TaskPaginatorCallBack
-from src.schemas.enums import ActionsNav, MenuButtons
+from src.schemas.callbacks import TaskPaginatorCallBack, TaskViewCallback
+from src.schemas.enums import ActionsNav, ActionsView, MenuButtons
 from src.services.tasks import TaskService
 
 
@@ -15,21 +17,10 @@ router = Router()
 async def get_all_tasks(
         message: Message,
         task_service: TaskService,
-        current_user: User):
-
-    tasks, meta = await task_service.get_tasks(user_id=current_user.id)
-
-    has_next = meta
-
-    current_page = 1
-
-    if tasks:
-        await message.answer(text="Your tasks list:", reply_markup=get_navigation_buttons(
-            tasks=tasks,
-            current_page=current_page,
-            has_next=has_next))
-    else:
-        await message.answer(text="Your task list is empty now!")
+        current_user: User,
+):
+    await render_tasks_list(message, task_service=task_service,
+                            user_id=current_user.id, current_page=1)
 
 
 @router.callback_query(TaskPaginatorCallBack.filter(F.action.in_((ActionsNav.PAGE_DOWN, ActionsNav.PAGE_UP, ActionsNav.LIST))))
@@ -41,20 +32,7 @@ async def pagination_tasks(
     callback_msg: Message
 ):
     current_page = callback_data.page
-    tasks, meta = await task_service.get_tasks(user_id=current_user.id, page=current_page)
-
-    has_next = meta
-
-    if tasks:
-        await callback_msg.edit_text(
-            text="Your tasks list:",
-            reply_markup=get_navigation_buttons(
-                tasks=tasks,
-                current_page=current_page,
-                has_next=has_next),
-            parse_mode='HTML')
-    else:
-        await callback_msg.edit_text(text="Your task list is empty now!")
+    await render_tasks_list(callback_msg, task_service, current_user.id, current_page=current_page)
 
     await callback.answer()
 
@@ -85,3 +63,53 @@ async def task_view(
             if e.response.status_code == 404:
                 await callback_msg.edit_text(text="Task not found")
     await callback.answer()
+
+
+@router.callback_query(TaskViewCallback.filter(F.action == ActionsView.DELETE))
+async def process_delete_task(
+    callback: CallbackQuery,
+    callback_data: TaskViewCallback,
+    task_service: TaskService,
+    current_user: User,
+    callback_msg: Message
+):
+    task_id = callback_data.task_id
+    if task_id:
+        await task_service.delete_task_by_id(
+            current_user.id,
+            task_id=task_id
+        )
+
+        await callback_msg.edit_text(
+            text="✅ Task successfully deleted"
+        )
+
+        await asyncio.sleep(1.5)
+
+        current_page = callback_data.page or 1
+
+    await render_tasks_list(callback_msg, task_service, current_user.id, current_page=current_page)
+
+    await callback.answer()
+
+
+async def render_tasks_list(
+    event: Message | CallbackQuery,
+    task_service: TaskService,
+    user_id: int,
+    current_page: int,
+):
+    tasks, meta = await task_service.get_tasks(user_id=user_id, page=current_page)
+
+    if not tasks and current_page > 1:
+        return await render_tasks_list(event, task_service, user_id, current_page - 1)
+
+    text = "Your tasks list:" if tasks else "Your task list is empty now!"
+    kb = get_navigation_buttons(
+        tasks=tasks, current_page=current_page, has_next=meta) if tasks else None
+
+    if isinstance(event, Message):
+        await event.answer(text=text, reply_markup=kb, parse_mode='HTML')
+    else:
+        if isinstance(event.message, Message):
+            await event.message.edit_text(text=text, reply_markup=kb, parse_mode='HTML')
