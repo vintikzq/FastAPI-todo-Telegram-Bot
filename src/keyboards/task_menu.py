@@ -66,7 +66,7 @@ def get_navigation_buttons(tasks: list[TaskResponse], current_page: int, has_nex
         buttons.append(InlineKeyboardButton(
             text='➡️',
             callback_data=TaskPaginatorCallBack(
-                action=ActionsNav.PAGE_DOWN, page=current_page + 1).pack()
+                action=ActionsNav.PAGE_UP, page=current_page + 1).pack()
         ))
 
     builder.row(*buttons)

@@ -80,11 +80,10 @@ async def process_delete_task(
             task_id=task_id
         )
 
-        await callback_msg.edit_text(
-            text="✅ Task successfully deleted"
+        await callback.answer(
+            text="✅ Task successfully deleted",
+            show_alert=False
         )
-
-        await asyncio.sleep(1.5)
 
         current_page = callback_data.page or 1
 
@@ -113,3 +112,8 @@ async def render_tasks_list(
     else:
         if isinstance(event.message, Message):
             await event.message.edit_text(text=text, reply_markup=kb, parse_mode='HTML')
+
+
+@router.callback_query(F.data == "ignore")
+async def ignore_callback(callback: CallbackQuery):
+    await callback.answer()

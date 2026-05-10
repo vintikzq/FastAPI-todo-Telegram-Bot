@@ -18,6 +18,9 @@ class BaseClient:
                             headers: dict | None = None, data: dict | None = None,
                             params: dict | None = None):
         url = f"{self.base_url.rstrip('/')}/{endpoint.lstrip('/')}"
+        if user_id:
+            token = await self.token_storage.get_token(user_id)
+            headers = {'Authorization': f"Bearer {token}"}
         try:
             if is_form:
                 response = await self.session.request(method, url, headers=headers, data=data, params=params)
