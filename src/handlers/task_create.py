@@ -1,10 +1,10 @@
 from datetime import datetime
 import logging
 
-from aiogram import F, Router
+from aiogram import F, Bot, Router
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
-from aiogram.types import CallbackQuery, Message, ReplyKeyboardRemove, User
+from aiogram.types import CallbackQuery, InlineKeyboardMarkup, Message, ReplyKeyboardRemove, User
 from aiogram_calendar import SimpleCalendar, SimpleCalendarCallback
 from aiogram_calendar.schemas import SimpleCalAct
 import httpx
@@ -23,28 +23,59 @@ router = Router()
 
 
 @router.message(Command('cancel'), StateFilter(CreateTaskState))
-async def cancel_handler(message: Message, state: FSMContext):
+async def cancel_handler(message: Message, state: FSMContext, bot: Bot):
+    data = await state.get_data()
+    msg_id = data.get('msg_id')
+
+    if msg_id:
+        try:
+            await bot.edit_message_text(
+                chat_id=message.chat.id,
+                message_id=msg_id,
+                text="❌ Task creation canceled",
+                reply_markup=None)
+        except Exception:
+            pass
     await state.clear()
-    await message.answer("Task creation successfully canceled",
+    await message.answer("Return to main menu",
                          reply_markup=get_main_menu_keyboard())
 
 
 @router.message(F.text == MenuButtons.CREATE_TASK)
 async def start_task_creation(message: Message, state: FSMContext):
-    await message.answer("<b>Write task name:</b>\n\n"
-                         "<i>Type /cancel to cancel creation.</i>",
-                         reply_markup=ReplyKeyboardRemove(),
-                         parse_mode="HTML")
+    await message.answer(text="Starting task creation", reply_markup=ReplyKeyboardRemove())
+
+    sent_msg = await message.answer("<b>Write task name:</b>\n\n"
+                                    "<i>Type /cancel to cancel creation.</i>",
+                                    reply_markup=InlineKeyboardMarkup(
+                                        inline_keyboard=[]),
+                                    parse_mode="HTML")
+
+    await state.update_data(msg_id=sent_msg.message_id)
     await state.set_state(CreateTaskState.waiting_for_task_name)
 
 
 @router.message(CreateTaskState.waiting_for_task_name)
-async def process_task_name(message: Message, state: FSMContext):
+async def process_task_name(message: Message, state: FSMContext, bot: Bot):
+
     await state.update_data(name=message.text)
-    sent_msg = await message.answer(
-        f"Name saved. Write task description:",
-        reply_markup=skip_button())
-    await state.update_data(last_msg_id=sent_msg.message_id)
+    try:
+        await message.delete()
+    except Exception:
+        pass
+
+    data = await state.get_data()
+
+    msg_id = data.get('msg_id')
+    try:
+        await bot.edit_message_text(
+            chat_id=message.chat.id,
+            message_id=msg_id,
+            text=f"Name saved. Write task description:",
+            reply_markup=skip_button())
+    except Exception:
+        pass
+
     await state.set_state(CreateTaskState.waiting_for_description)
 
 
@@ -55,7 +86,7 @@ async def process_task_description_skip(
         callback_msg: Message):
 
     await state.update_data(description=None)
-    await callback.answer(f"Пропущено")
+    await callback.answer(f'Skipped')
 
     await callback_msg.edit_text(
         "Description skipped. Now select priority:",
@@ -65,19 +96,26 @@ async def process_task_description_skip(
 
 
 @router.message(CreateTaskState.waiting_for_description)
-async def process_task_description(message: Message, state: FSMContext):
+async def process_task_description(message: Message, state: FSMContext, bot: Bot):
     await state.update_data(description=message.text)
-    await message.answer(
-        "Description saved. Now select priority:",
-        reply_markup=create_task_priority_buttons()
-    )
+
+    try:
+        await message.delete()
+    except Exception:
+        pass
+
     data = await state.get_data()
-    if message.bot is not None:
-        await message.bot.edit_message_reply_markup(
+
+    try:
+        await bot.edit_message_text(
             chat_id=message.chat.id,
-            message_id=data.get('last_msg_id'),
-            reply_markup=None
+            message_id=data.get('msg_id'),
+            text="Description saved. Now select priority:",
+            reply_markup=create_task_priority_buttons()
         )
+    except Exception:
+        pass
+
     await state.set_state(CreateTaskState.waiting_for_task_priority)
 
 

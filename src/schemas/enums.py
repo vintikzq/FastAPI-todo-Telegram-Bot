@@ -6,6 +6,14 @@ class TodoStatus(StrEnum):
     IN_PROGRESS = auto()
     DONE = auto()
 
+    @property
+    def label(self) -> str:
+        return {
+            self.PENDING: 'Pending 🔜',
+            self.IN_PROGRESS: 'In progress ⏳',
+            self.DONE: 'Done ✅'
+        }.get(self, 'Unknown')
+
 
 class TodoPriority(StrEnum):
     LOW = auto()
@@ -37,3 +45,12 @@ class ActionsUpdate(IntEnum):
     DESCRIPTION = 2
     PRIORITY = 3
     DEADLINE = 4
+
+    @property
+    def label(self) -> str:
+        return {
+            self.NAME: 'Name 📝',
+            self.DESCRIPTION: 'Description 📄',
+            self.PRIORITY: 'Priority ⏫',
+            self.DEADLINE: 'Deadline 📅',
+        }.get(self, 'Unknown')

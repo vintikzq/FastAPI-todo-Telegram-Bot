@@ -19,7 +19,7 @@ class TaskPaginatorCallBack(CallbackData, prefix='task_page'):
 
 class TaskViewCallback(CallbackData, prefix='task_view'):
     action:  ActionsView
-    page: int | None = None
+    page: int
     task_id: int
 
 

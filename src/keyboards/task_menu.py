@@ -69,14 +69,9 @@ def get_task_buttons(task_id: int, current_page: int, status: TodoStatus | None 
         status_btns = []
         for s in TodoStatus:
             if s != status:
-                label = {
-                    TodoStatus.PENDING: "Pending 🔜",
-                    TodoStatus.IN_PROGRESS: "In progress ⏳",
-                    TodoStatus.DONE: "Done ✅"
-                }[s]
                 status_btns.append(
                     InlineKeyboardButton(
-                        text=label,
+                        text=s.label,
                         callback_data=TaskStatusCallback(
                             new_status=s,
                             task_id=task_id,
@@ -90,14 +85,16 @@ def get_task_buttons(task_id: int, current_page: int, status: TodoStatus | None 
         text='Delete 🗑️',
         callback_data=TaskViewCallback(
             action=ActionsView.DELETE,
-            task_id=task_id).pack()
+            task_id=task_id,
+            page=current_page).pack()
     )
 
     update_btn = InlineKeyboardButton(
         text='Update ⚙️',
         callback_data=TaskViewCallback(
             action=ActionsView.UPDATE,
-            task_id=task_id).pack()
+            task_id=task_id,
+            page=current_page).pack()
     )
 
     back_btn = InlineKeyboardButton(
