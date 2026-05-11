@@ -16,13 +16,13 @@ from src.schemas.callbacks import TaskFormCallBack, TaskPriorityCallback
 from src.schemas.enums import MenuButtons
 from src.schemas.tasks import TaskRequest
 from src.services.tasks import TaskService
-from src.states.tasks import CreateTaskState
+from src.states.tasks import CreateTaskState, UpdateTaskState
 
 logger = logging.getLogger(__name__)
 router = Router()
 
 
-@router.message(Command('cancel'), StateFilter(CreateTaskState))
+@router.message(Command('cancel'), StateFilter(CreateTaskState, UpdateTaskState))
 async def cancel_handler(message: Message, state: FSMContext, bot: Bot):
     data = await state.get_data()
     msg_id = data.get('msg_id')
@@ -32,7 +32,7 @@ async def cancel_handler(message: Message, state: FSMContext, bot: Bot):
             await bot.edit_message_text(
                 chat_id=message.chat.id,
                 message_id=msg_id,
-                text="❌ Task creation canceled",
+                text="❌ Operation canceled",
                 reply_markup=None)
         except Exception:
             pass

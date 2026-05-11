@@ -1,4 +1,4 @@
-from aiogram import F, Router
+from aiogram import F, Bot, Router
 from aiogram.types import CallbackQuery, Message, User
 import httpx
 
@@ -42,7 +42,8 @@ async def task_view(
     callback_data: TaskPaginatorCallBack,
     task_service: TaskService,
     current_user: User,
-    callback_msg: Message
+    callback_msg: Message,
+    bot: Bot
 ):
     task_id = callback_data.task_id
     if task_id:
@@ -53,6 +54,7 @@ async def task_view(
             )
 
             await render_task_card(
+                bot=bot,
                 page=callback_data.page,
                 callback_msg=callback_msg,
                 task=task,
@@ -97,7 +99,8 @@ async def update_status(
     callback_data: TaskStatusCallback,
     task_service: TaskService,
     current_user: User,
-    callback_msg: Message
+    callback_msg: Message,
+    bot: Bot
 ):
     task_id = callback_data.task_id
 
@@ -110,6 +113,7 @@ async def update_status(
     updated_task = await task_service.update_task_by_id(user_id, task_id, payload)
 
     await render_task_card(
+        bot=bot,
         page=callback_data.page,
         callback_msg=callback_msg,
         task=updated_task,
@@ -144,16 +148,31 @@ async def render_task_card(
     page: int,
     callback_msg: Message,
     task: TaskResponse,
-    status: TodoStatus
+    status: TodoStatus,
+    bot: Bot,
+    msg_id: int | None = None,
+    chat_id: int | None = None
 ):
-    await callback_msg.edit_text(
-        text=task.format_to_html(),
-        reply_markup=get_task_buttons(
-            task_id=task.id,
-            current_page=page,
-            status=status),
-        parse_mode='HTML'
-    )
+    if msg_id is None:
+        await callback_msg.edit_text(
+            text=task.format_to_html(),
+            reply_markup=get_task_buttons(
+                task_id=task.id,
+                current_page=page,
+                status=status),
+            parse_mode='HTML'
+        )
+    else:
+        await bot.edit_message_text(
+            chat_id=chat_id,
+            message_id=msg_id,
+            text=task.format_to_html(),
+            reply_markup=get_task_buttons(
+                task_id=task.id,
+                current_page=page,
+                status=status),
+            parse_mode='HTML'
+        )
 
 
 @router.callback_query(F.data == "ignore")
