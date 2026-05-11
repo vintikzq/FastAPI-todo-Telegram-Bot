@@ -30,3 +30,10 @@ class ActionsNav(IntEnum):
 class ActionsView(IntEnum):
     DELETE = 1
     UPDATE = 2
+
+
+class ActionsUpdate(IntEnum):
+    NAME = 1
+    DESCRIPTION = 2
+    PRIORITY = 3
+    DEADLINE = 4

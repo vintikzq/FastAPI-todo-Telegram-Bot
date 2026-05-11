@@ -28,3 +28,7 @@ class TaskService(BaseClient):
 
     async def delete_task_by_id(self, user_id: int, task_id: int):
         await self._make_request('delete', f'/tasks/{task_id}', user_id)
+
+    async def update_task_by_id(self, user_id: int, task_id: int, data: TaskUpdateRequest):
+        task = await self._make_request('patch', f'/tasks/{task_id}', user_id, data=data.model_dump(exclude_unset=True))
+        return TaskResponse(**task)

@@ -1,7 +1,7 @@
 from aiogram.types import InlineKeyboardButton
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
-from src.schemas.callbacks import TaskFormCallBack, TaskPaginatorCallBack, TaskPriorityCallback, TaskViewCallback
+from src.schemas.callbacks import TaskFormCallBack, TaskPaginatorCallBack, TaskPriorityCallback, TaskStatusCallback, TaskViewCallback
 from src.schemas.enums import ActionsNav, ActionsView, TodoPriority, TodoStatus
 from src.schemas.tasks import TaskResponse
 
@@ -13,17 +13,6 @@ def create_task_priority_buttons():
             text=priority,
             callback_data=TaskPriorityCallback(value=priority.lower()).pack()
         ))
-    return builder.as_markup(resize_keyboard=True)
-
-
-def status_buttons():
-    builder = InlineKeyboardBuilder()
-    builder.add(InlineKeyboardButton(
-        text=TodoStatus.PENDING, callback_data='status_pending'))
-    builder.add(InlineKeyboardButton(
-        text=TodoStatus.IN_PROGRESS, callback_data='status_progress'))
-    builder.add(InlineKeyboardButton(
-        text=TodoStatus.DONE, callback_data='status_done'))
     return builder.as_markup(resize_keyboard=True)
 
 
@@ -74,29 +63,49 @@ def get_navigation_buttons(tasks: list[TaskResponse], current_page: int, has_nex
     return builder.as_markup(resize_keyboard=True)
 
 
-def get_task_buttons(task_id: int, current_page: int):
+def get_task_buttons(task_id: int, current_page: int, status: TodoStatus | None = None):
     builder = InlineKeyboardBuilder()
+    if status is not None:
+        status_btns = []
+        for s in TodoStatus:
+            if s != status:
+                label = {
+                    TodoStatus.PENDING: "Pending 🔜",
+                    TodoStatus.IN_PROGRESS: "In progress ⏳",
+                    TodoStatus.DONE: "Done ✅"
+                }[s]
+                status_btns.append(
+                    InlineKeyboardButton(
+                        text=label,
+                        callback_data=TaskStatusCallback(
+                            new_status=s,
+                            task_id=task_id,
+                            page=current_page
+                        ).pack()
+                    )
+                )
+        builder.row(*status_btns)
 
-    delete_btn = (InlineKeyboardButton(
+    delete_btn = InlineKeyboardButton(
         text='Delete 🗑️',
         callback_data=TaskViewCallback(
             action=ActionsView.DELETE,
             task_id=task_id).pack()
-    ))
+    )
 
-    update_btn = (InlineKeyboardButton(
+    update_btn = InlineKeyboardButton(
         text='Update ⚙️',
         callback_data=TaskViewCallback(
             action=ActionsView.UPDATE,
             task_id=task_id).pack()
-    ))
+    )
 
-    back_btn = (InlineKeyboardButton(
+    back_btn = InlineKeyboardButton(
         text="🔙 Back to list",
         callback_data=TaskPaginatorCallBack(
             action=ActionsNav.LIST,
             page=current_page).pack()
-    ))
+    )
 
     builder.row(delete_btn, update_btn)
     builder.row(back_btn)

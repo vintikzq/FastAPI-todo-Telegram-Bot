@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from pydantic import BaseModel, ConfigDict
+from pydantic import BaseModel, ConfigDict, Field
 
 from src.schemas.enums import TodoPriority, TodoStatus
 
@@ -58,3 +58,11 @@ class TaskRequest(BaseModel):
     priority: TodoPriority
     description: str | None
     due_date: str | None
+
+
+class TaskUpdateRequest(BaseModel):
+    name: str | None = Field(default=None, min_length=1, max_length=127)
+    status: TodoStatus | None = None
+    priority: TodoPriority | None = None
+    due_date: str | None = None
+    description: str | None = Field(default=None, max_length=1024)

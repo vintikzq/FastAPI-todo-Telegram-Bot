@@ -1,6 +1,6 @@
 from aiogram.filters.callback_data import CallbackData
 
-from src.schemas.enums import ActionsNav, ActionsView
+from src.schemas.enums import ActionsNav, ActionsUpdate, ActionsView, TodoStatus
 
 
 class TaskPriorityCallback(CallbackData, prefix='prio'):
@@ -21,3 +21,15 @@ class TaskViewCallback(CallbackData, prefix='task_view'):
     action:  ActionsView
     page: int | None = None
     task_id: int
+
+
+class TaskUpdateCallback(CallbackData, prefix='upd'):
+    to_update: ActionsUpdate
+    task_id: int
+    page: int
+
+
+class TaskStatusCallback(CallbackData, prefix='stat'):
+    new_status: TodoStatus
+    task_id: int
+    page: int
