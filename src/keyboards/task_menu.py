@@ -6,12 +6,12 @@ from src.schemas.enums import ActionsNav, ActionsView, TodoPriority, TodoStatus
 from src.schemas.tasks import TaskResponse
 
 
-def create_task_priority_buttons():
+def get_task_priority_buttons():
     builder = InlineKeyboardBuilder()
-    for priority in [TodoPriority.LOW, TodoPriority.MEDIUM, TodoPriority.HIGH]:
+    for priority in TodoPriority:
         builder.add(InlineKeyboardButton(
-            text=priority,
-            callback_data=TaskPriorityCallback(value=priority.lower()).pack()
+            text=priority.label,
+            callback_data=TaskPriorityCallback(value=priority).pack()
         ))
     return builder.as_markup(resize_keyboard=True)
 
@@ -97,14 +97,19 @@ def get_task_buttons(task_id: int, current_page: int, status: TodoStatus | None 
             page=current_page).pack()
     )
 
-    back_btn = InlineKeyboardButton(
+    back_to_list_btn = InlineKeyboardButton(
         text="🔙 Back to list",
         callback_data=TaskPaginatorCallBack(
             action=ActionsNav.LIST,
             page=current_page).pack()
     )
 
+    back_to_home_btn = InlineKeyboardButton(
+        text="🏠 Main Menu",
+        callback_data='go_to_menu'
+    )
+
     builder.row(delete_btn, update_btn)
-    builder.row(back_btn)
+    builder.row(back_to_list_btn, back_to_home_btn)
 
     return builder.as_markup(resize_keyboard=True)

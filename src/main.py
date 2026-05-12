@@ -6,7 +6,7 @@ import httpx
 from src.handlers.common import router as common_handler_router
 from src.handlers.tasks import router as tasks_handler_router
 from src.handlers.task_create import router as create_tasks_handler_router
-from src.handlers.task_edit import router as update_tasks_hendler_router
+from src.handlers.task_edit import router as update_tasks_handler_router
 from src.core.config import settings
 from src.middlewares.auth import AuthMiddleware
 from src.middlewares.callback_massage import CallBackMessageMiddleware
@@ -20,22 +20,41 @@ logging.basicConfig(
 )
 
 
+async def on_startup(dispatcher: Dispatcher) -> None:
+    session = httpx.AsyncClient()
+
+    token_storage = TokenStorage()
+    task_service = TaskService(session, token_storage)
+    auth_service = AuthService(session, token_storage)
+
+    dispatcher['http_session'] = session
+    dispatcher['token_storage'] = token_storage
+    dispatcher['task_service'] = task_service
+    dispatcher['auth_service'] = auth_service
+
+
+async def on_shutdown(dispatcher: Dispatcher) -> None:
+    session: httpx.AsyncClient = dispatcher['http_session']
+
+    await session.aclose()
+
+
 async def main():
     bot = Bot(token=settings.BOT_TOKEN)
     dp = Dispatcher()
+    dp.startup.register(on_startup)
+    dp.shutdown.register(on_shutdown)
+
     dp.callback_query.middleware(CallBackMessageMiddleware())
     dp.message.middleware(AuthMiddleware())
     dp.callback_query.middleware(AuthMiddleware())
+
     dp.include_router(common_handler_router)
     dp.include_router(tasks_handler_router)
     dp.include_router(create_tasks_handler_router)
-    dp.include_router(update_tasks_hendler_router)
-    token_storage = TokenStorage()
-    async with httpx.AsyncClient() as session:
-        task_service = TaskService(session, token_storage)
-        auth_service = AuthService(session, token_storage)
+    dp.include_router(update_tasks_handler_router)
 
-        await dp.start_polling(bot, task_service=task_service, auth_service=auth_service, token_storage=token_storage)
+    await dp.start_polling(bot)
 
 if __name__ == '__main__':
     asyncio.run(main())

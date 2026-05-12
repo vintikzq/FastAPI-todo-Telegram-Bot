@@ -2,6 +2,7 @@ from aiogram import F, Bot, Router
 from aiogram.types import CallbackQuery, Message, User
 import httpx
 
+from src.keyboards.main_menu import get_main_menu_keyboard
 from src.keyboards.task_menu import get_navigation_buttons, get_task_buttons
 from src.schemas.callbacks import TaskPaginatorCallBack, TaskStatusCallback, TaskViewCallback
 from src.schemas.enums import ActionsNav, ActionsView, MenuButtons, TodoStatus
@@ -75,6 +76,8 @@ async def process_delete_task(
     callback_msg: Message
 ):
     task_id = callback_data.task_id
+    current_page = callback_data.page or 1
+
     if task_id:
         await task_service.delete_task_by_id(
             current_user.id,
@@ -85,8 +88,6 @@ async def process_delete_task(
             text="✅ Task successfully deleted",
             show_alert=False
         )
-
-        current_page = callback_data.page or 1
 
     await render_tasks_list(callback_msg, task_service, current_user.id, current_page=current_page, is_edit=True)
 
@@ -120,6 +121,17 @@ async def update_status(
         status=updated_task.status)
 
     await callback.answer()
+
+
+@router.callback_query(F.data == 'go_to_menu')
+async def go_to_main_menu(
+    callback: CallbackQuery,
+    callback_msg: Message
+):
+    await callback_msg.answer(text="Returned to main menu",
+                              reply_markup=get_main_menu_keyboard())
+
+    callback.answer()
 
 
 async def render_tasks_list(

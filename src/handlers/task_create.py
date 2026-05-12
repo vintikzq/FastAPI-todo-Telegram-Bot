@@ -11,7 +11,7 @@ import httpx
 from pydantic import ValidationError
 
 from src.keyboards.main_menu import get_main_menu_keyboard
-from src.keyboards.task_menu import create_task_priority_buttons, skip_button
+from src.keyboards.task_menu import get_task_priority_buttons, skip_button
 from src.schemas.callbacks import TaskFormCallBack, TaskPriorityCallback
 from src.schemas.enums import MenuButtons
 from src.schemas.tasks import TaskRequest
@@ -90,7 +90,7 @@ async def process_task_description_skip(
 
     await callback_msg.edit_text(
         "Description skipped. Now select priority:",
-        reply_markup=create_task_priority_buttons()
+        reply_markup=get_task_priority_buttons()
     )
     await state.set_state(CreateTaskState.waiting_for_task_priority)
 
@@ -111,7 +111,7 @@ async def process_task_description(message: Message, state: FSMContext, bot: Bot
             chat_id=message.chat.id,
             message_id=data.get('msg_id'),
             text="Description saved. Now select priority:",
-            reply_markup=create_task_priority_buttons()
+            reply_markup=get_task_priority_buttons()
         )
     except Exception:
         pass
@@ -138,7 +138,7 @@ async def process_task_priority(
     await state.set_state(CreateTaskState.waiting_for_deadline_date)
 
 
-@router.callback_query(SimpleCalendarCallback.filter())
+@router.callback_query(SimpleCalendarCallback.filter(), CreateTaskState.waiting_for_deadline_date)
 async def process_deadline(
     callback: CallbackQuery,
     callback_msg: Message,
@@ -150,13 +150,9 @@ async def process_deadline(
     selected, date = await SimpleCalendar().process_selection(callback, callback_data)
 
     if selected:
-        if date.date() < datetime.now().date():
-            await callback.answer("The deadline cannot be in the past!", show_alert=True)
-            await callback_msg.edit_text(
-                "Invalid date! Please select a future date for the deadline",
-                reply_markup=await SimpleCalendar().start_calendar()
-            )
+        if not await is_deadline_correct(callback, callback_msg, date):
             return
+
         iso_date = date.isoformat()
         await state.update_data(due_date=iso_date)
         await complete_task_creation(state, task_service,
@@ -189,3 +185,18 @@ async def complete_task_creation(
         await callback_msg.answer("Check your connection and try again.")
     except httpx.HTTPStatusError:
         await callback_msg.answer("Something went wrong on our end. Please try later.")
+
+
+async def is_deadline_correct(
+    callback: CallbackQuery,
+    callback_msg: Message,
+    date: datetime
+):
+    if date.date() < datetime.now().date():
+        await callback.answer("The deadline cannot be in the past!", show_alert=True)
+        await callback_msg.edit_text(
+            "Invalid date! Please select a future date for the deadline",
+            reply_markup=await SimpleCalendar().start_calendar()
+        )
+        return False
+    return True

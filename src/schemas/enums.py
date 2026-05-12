@@ -20,6 +20,14 @@ class TodoPriority(StrEnum):
     MEDIUM = auto()
     HIGH = auto()
 
+    @property
+    def label(self) -> str:
+        return {
+            self.LOW: 'Low ⬇️',
+            self.MEDIUM: 'Medium ⬆️',
+            self.HIGH: 'High ⏫'
+        }.get(self, 'Unknown')
+
 
 class MenuButtons(StrEnum):
     MY_TASKS = '🗂️ My tasks'

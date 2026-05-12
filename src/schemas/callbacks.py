@@ -1,10 +1,10 @@
 from aiogram.filters.callback_data import CallbackData
 
-from src.schemas.enums import ActionsNav, ActionsUpdate, ActionsView, TodoStatus
+from src.schemas.enums import ActionsNav, ActionsUpdate, ActionsView, TodoPriority, TodoStatus
 
 
 class TaskPriorityCallback(CallbackData, prefix='prio'):
-    value: str
+    value: TodoPriority
 
 
 class TaskFormCallBack(CallbackData, prefix='task_form'):
