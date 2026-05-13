@@ -3,9 +3,10 @@ from pydantic_settings import BaseSettings, SettingsConfigDict
 
 class Settings(BaseSettings):
     BOT_TOKEN: str
-    BASE_API_URL: str = "http://localhost:8000/api/v1/"
+    BASE_API_URL: str
     INTERNAL_BOT_SECRET: str
-
+    TOKEN_TTL_SEC: int
+    REDIS_URL: str
     model_config = SettingsConfigDict(env_file='.env')
 
 

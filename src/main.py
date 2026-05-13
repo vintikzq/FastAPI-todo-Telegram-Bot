@@ -3,6 +3,7 @@ import logging
 
 from aiogram import Bot, Dispatcher
 import httpx
+from redis.asyncio import Redis
 from src.handlers.common import router as common_handler_router
 from src.handlers.tasks import router as tasks_handler_router
 from src.handlers.task_create import router as create_tasks_handler_router
@@ -24,11 +25,16 @@ logging.basicConfig(
 
 async def on_startup(dispatcher: Dispatcher) -> None:
     session = httpx.AsyncClient()
+    redis_client = Redis.from_url(
+        url=settings.REDIS_URL,
+        decode_responses=True
+    )
 
-    token_storage = TokenStorage()
+    token_storage = TokenStorage(redis_client=redis_client)
     task_service = TaskService(session, token_storage)
     auth_service = AuthService(session, token_storage)
 
+    dispatcher['redis_client'] = redis_client
     dispatcher['http_session'] = session
     dispatcher['token_storage'] = token_storage
     dispatcher['task_service'] = task_service
@@ -37,8 +43,9 @@ async def on_startup(dispatcher: Dispatcher) -> None:
 
 async def on_shutdown(dispatcher: Dispatcher) -> None:
     session: httpx.AsyncClient = dispatcher['http_session']
-
+    redis_client: Redis = dispatcher['redis_client']
     await session.aclose()
+    await redis_client.close()
 
 
 async def main():
@@ -51,8 +58,8 @@ async def main():
     dp.message.middleware(AuthMiddleware())
     dp.callback_query.middleware(AuthMiddleware())
 
-    dp.include_router(archive_tasks_router)
     dp.include_router(error_catch_router)
+    dp.include_router(archive_tasks_router)
     dp.include_router(common_handler_router)
     dp.include_router(tasks_handler_router)
     dp.include_router(create_tasks_handler_router)
