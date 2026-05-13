@@ -1,8 +1,7 @@
 from aiogram import F, Bot, Router
+from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message, User
-import httpx
 
-from src.keyboards.main_menu import get_main_menu_keyboard
 from src.keyboards.task_menu import get_navigation_buttons, get_task_buttons
 from src.schemas.callbacks import TaskPaginatorCallBack, TaskStatusCallback, TaskViewCallback
 from src.schemas.enums import ActionsNav, ActionsView, MenuButtons, TodoStatus
@@ -18,9 +17,10 @@ async def get_all_tasks(
         message: Message,
         task_service: TaskService,
         current_user: User,
+        state: FSMContext
 ):
     await render_tasks_list(message, task_service=task_service,
-                            user_id=current_user.id, current_page=1, is_edit=False)
+                            user_id=current_user.id, current_page=1, is_edit=False, state=state)
 
 
 @router.callback_query(TaskPaginatorCallBack.filter(F.action.in_((ActionsNav.PAGE_DOWN, ActionsNav.PAGE_UP, ActionsNav.LIST))))
@@ -29,10 +29,11 @@ async def pagination_tasks(
     callback_data: TaskPaginatorCallBack,
     task_service: TaskService,
     current_user: User,
-    callback_msg: Message
+    callback_msg: Message,
+    state: FSMContext
 ):
     current_page = callback_data.page
-    await render_tasks_list(callback_msg, task_service, current_user.id, current_page=current_page, is_edit=True)
+    await render_tasks_list(callback_msg, task_service, current_user.id, current_page=current_page, is_edit=True, state=state)
 
     await callback.answer()
 
@@ -44,26 +45,24 @@ async def task_view(
     task_service: TaskService,
     current_user: User,
     callback_msg: Message,
-    bot: Bot
+    bot: Bot,
+    state: FSMContext
 ):
     task_id = callback_data.task_id
     if task_id:
-        try:
-            task = await task_service.get_task_by_id(
-                user_id=current_user.id,
-                task_id=task_id
-            )
+        task = await task_service.get_task_by_id(
+            user_id=current_user.id,
+            task_id=task_id
+        )
 
-            await render_task_card(
-                bot=bot,
-                page=callback_data.page,
-                callback_msg=callback_msg,
-                task=task,
-                status=task.status)
+        await render_task_card(
+            bot=bot,
+            page=callback_data.page,
+            callback_msg=callback_msg,
+            task=task,
+            status=task.status,
+            state=state)
 
-        except httpx.HTTPStatusError as e:
-            if e.response.status_code == 404:
-                await callback_msg.edit_text(text="Task not found")
     await callback.answer()
 
 
@@ -73,7 +72,8 @@ async def process_delete_task(
     callback_data: TaskViewCallback,
     task_service: TaskService,
     current_user: User,
-    callback_msg: Message
+    callback_msg: Message,
+    state: FSMContext
 ):
     task_id = callback_data.task_id
     current_page = callback_data.page or 1
@@ -89,7 +89,7 @@ async def process_delete_task(
             show_alert=False
         )
 
-    await render_tasks_list(callback_msg, task_service, current_user.id, current_page=current_page, is_edit=True)
+    await render_tasks_list(callback_msg, task_service, current_user.id, current_page=current_page, is_edit=True, state=state)
 
     await callback.answer()
 
@@ -101,7 +101,8 @@ async def update_status(
     task_service: TaskService,
     current_user: User,
     callback_msg: Message,
-    bot: Bot
+    bot: Bot,
+    state: FSMContext
 ):
     task_id = callback_data.task_id
 
@@ -118,20 +119,10 @@ async def update_status(
         page=callback_data.page,
         callback_msg=callback_msg,
         task=updated_task,
-        status=updated_task.status)
+        status=updated_task.status,
+        state=state)
 
     await callback.answer()
-
-
-@router.callback_query(F.data == 'go_to_menu')
-async def go_to_main_menu(
-    callback: CallbackQuery,
-    callback_msg: Message
-):
-    await callback_msg.answer(text="Returned to main menu",
-                              reply_markup=get_main_menu_keyboard())
-
-    callback.answer()
 
 
 async def render_tasks_list(
@@ -139,21 +130,26 @@ async def render_tasks_list(
     task_service: TaskService,
     user_id: int,
     current_page: int,
+    state: FSMContext,
     is_edit: bool = False
+
 ):
     tasks, meta = await task_service.get_tasks(user_id=user_id, page=current_page)
 
     if not tasks and current_page > 1:
-        return await render_tasks_list(message, task_service, user_id, current_page - 1, is_edit=True)
+        return await render_tasks_list(message, task_service, user_id, current_page - 1, is_edit=True, state=state)
 
     text = "Your tasks list:" if tasks else "Your task list is empty now!"
     kb = get_navigation_buttons(
         tasks=tasks, current_page=current_page, has_next=meta) if tasks else None
 
     if is_edit:
-        await message.edit_text(text=text, reply_markup=kb, parse_mode='HTML')
+        sent_msg = await message.edit_text(text=text, reply_markup=kb, parse_mode='HTML')
     else:
-        await message.answer(text=text, reply_markup=kb, parse_mode='HTML')
+        sent_msg = await message.answer(text=text, reply_markup=kb, parse_mode='HTML')
+
+    if isinstance(sent_msg, Message) and kb is not None:
+        await state.update_data(last_msg_id=sent_msg.message_id)
 
 
 async def render_task_card(
@@ -162,11 +158,12 @@ async def render_task_card(
     task: TaskResponse,
     status: TodoStatus,
     bot: Bot,
+    state: FSMContext,
     msg_id: int | None = None,
     chat_id: int | None = None
 ):
     if msg_id is None:
-        await callback_msg.edit_text(
+        sent_msg = await callback_msg.edit_text(
             text=task.format_to_html(),
             reply_markup=get_task_buttons(
                 task_id=task.id,
@@ -174,6 +171,10 @@ async def render_task_card(
                 status=status),
             parse_mode='HTML'
         )
+
+        if isinstance(sent_msg, Message):
+            await state.update_data(last_msg_id=sent_msg.message_id)
+
     else:
         await bot.edit_message_text(
             chat_id=chat_id,
@@ -185,6 +186,8 @@ async def render_task_card(
                 status=status),
             parse_mode='HTML'
         )
+
+        await state.update_data(last_msg_id=msg_id)
 
 
 @router.callback_query(F.data == "ignore")

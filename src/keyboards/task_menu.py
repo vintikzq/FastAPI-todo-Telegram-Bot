@@ -104,12 +104,7 @@ def get_task_buttons(task_id: int, current_page: int, status: TodoStatus | None 
             page=current_page).pack()
     )
 
-    back_to_home_btn = InlineKeyboardButton(
-        text="🏠 Main Menu",
-        callback_data='go_to_menu'
-    )
-
     builder.row(delete_btn, update_btn)
-    builder.row(back_to_list_btn, back_to_home_btn)
+    builder.row(back_to_list_btn)
 
     return builder.as_markup(resize_keyboard=True)

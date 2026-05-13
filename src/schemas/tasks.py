@@ -66,3 +66,27 @@ class TaskUpdateRequest(BaseModel):
     priority: TodoPriority | None = None
     due_date: str | None = None
     description: str | None = Field(default=None, max_length=1024)
+
+
+class TaskStatsResponse(BaseModel):
+    completed_count: int
+    total_tasks: int
+
+    @property
+    def emoji_completed_count(self) -> str:
+        return f"{self.completed_count} ✅"
+
+    @property
+    def emoji_total_tasks_count(self) -> str:
+        return f"{self.total_tasks} 📋"
+
+    @property
+    def emoji_tasks_at_work(self) -> str:
+        return f"{self.total_tasks - self.completed_count} 💻"
+
+    def format_to_pretty_stats(self) -> str:
+        done = self.emoji_completed_count
+        total = self.emoji_total_tasks_count
+        at_work = self.emoji_tasks_at_work
+
+        return f"<b>Your statistics:</b>\n\nTotal tasks: {total}\nDone tasks: {done}\nTasks at work: {at_work}"

@@ -1,6 +1,6 @@
 from httpx import AsyncClient
 
-from src.schemas.tasks import TaskRequest, TaskResponse, TaskUpdateRequest
+from src.schemas.tasks import TaskRequest, TaskResponse, TaskStatsResponse, TaskUpdateRequest
 from src.services.base import BaseClient
 from src.storage.tokens import TokenStorage
 
@@ -26,9 +26,14 @@ class TaskService(BaseClient):
         data = await self._make_request('get', f'/tasks/{task_id}', user_id)
         return TaskResponse(**data)
 
-    async def delete_task_by_id(self, user_id: int, task_id: int):
+    async def delete_task_by_id(self, user_id: int, task_id: int) -> None:
         await self._make_request('delete', f'/tasks/{task_id}', user_id)
 
-    async def update_task_by_id(self, user_id: int, task_id: int, data: TaskUpdateRequest):
+    async def update_task_by_id(self, user_id: int, task_id: int, data: TaskUpdateRequest) -> TaskResponse:
         task = await self._make_request('patch', f'/tasks/{task_id}', user_id, data=data.model_dump(exclude_unset=True))
         return TaskResponse(**task)
+
+    async def get_stats_counter(self, user_id: int):
+        tasks_stats = await self._make_request('get', '/tasks/stats', user_id)
+
+        return TaskStatsResponse(**tasks_stats)
