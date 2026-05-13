@@ -5,6 +5,7 @@ class TodoStatus(StrEnum):
     PENDING = auto()
     IN_PROGRESS = auto()
     DONE = auto()
+    ACTIVE = auto()
 
     @property
     def label(self) -> str:
@@ -40,7 +41,7 @@ class ActionsNav(IntEnum):
     VIEW = 2
     PAGE_UP = 3
     PAGE_DOWN = 4
-    SKIP = 5
+    ARCHIVE = 5
 
 
 class ActionsView(IntEnum):

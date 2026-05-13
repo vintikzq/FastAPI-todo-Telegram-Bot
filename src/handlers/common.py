@@ -5,6 +5,7 @@ from aiogram.fsm.context import FSMContext
 from aiogram.types import Message, User
 
 from src.keyboards.main_menu import get_main_menu_keyboard
+from src.keyboards.task_menu import get_stats_buttons
 from src.schemas.enums import MenuButtons
 from src.services.tasks import TaskService
 
@@ -40,7 +41,11 @@ async def stats_handler(
 
     data = await task_service.get_stats_counter(current_user.id)
 
-    sent_msg = await message.answer(text=data.format_to_pretty_stats(), parse_mode='HTML')
+    sent_msg = await message.answer(
+        text=data.format_to_pretty_stats(),
+        parse_mode='HTML',
+        reply_markup=get_stats_buttons()
+    )
 
     if isinstance(sent_msg, Message):
         await state.update_data(last_msg_id=sent_msg.message_id)

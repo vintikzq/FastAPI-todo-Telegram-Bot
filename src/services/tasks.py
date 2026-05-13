@@ -1,5 +1,8 @@
+from typing import Any
+
 from httpx import AsyncClient
 
+from src.schemas.enums import TodoStatus
 from src.schemas.tasks import TaskRequest, TaskResponse, TaskStatsResponse, TaskUpdateRequest
 from src.services.base import BaseClient
 from src.storage.tokens import TokenStorage
@@ -10,10 +13,15 @@ class TaskService(BaseClient):
         super().__init__(session, token_storage)
         self.token_storage = token_storage
 
-    async def get_tasks(self, user_id: int, page: int = 1, limit: int = 5) -> tuple[list[TaskResponse], bool]:
+    async def get_tasks(self, user_id: int, page: int = 1, limit: int = 5, status: TodoStatus | None = None) -> tuple[list[TaskResponse], bool]:
         offset = (page - 1) * limit
+        params: dict[str, Any] = {'limit': limit + 1, 'offset': offset}
+
+        if status is not None:
+            params['status'] = status
+
         data = await self._make_request(
-            'get', '/tasks', user_id, params={'limit': limit + 1, 'offset': offset})
+            'get', '/tasks', user_id, params=params)
         if len(data) > limit:
             return ([TaskResponse(**task) for task in data[:limit]], True)
         return ([TaskResponse(**task) for task in data], False)

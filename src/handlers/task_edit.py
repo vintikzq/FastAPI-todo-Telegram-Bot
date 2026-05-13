@@ -27,11 +27,14 @@ async def process_update_menu(
     callback_data: TaskViewCallback,
     callback_msg: Message
 ):
+    is_archive = callback_data.is_archive
+
     await callback_msg.edit_text(
         text="Select fields to edit:",
         reply_markup=get_update_buttons(
             task_id=callback_data.task_id,
-            page=callback_data.page
+            page=callback_data.page,
+            is_archive=is_archive
         )
     )
 
@@ -49,7 +52,8 @@ async def change_task_name(
     await state.update_data(
         msg_id=callback_msg.message_id,
         task_id=callback_data.task_id,
-        page=callback_data.page
+        page=callback_data.page,
+        is_archive=callback_data.is_archive
     )
 
     await callback_msg.edit_text(text="<b>Write new task name:</b>\n\n"
@@ -75,6 +79,7 @@ async def process_new_task_name(
     task_id = data['task_id']
     page = data['page']
     msg_id = data['msg_id']
+    is_archive = data['is_archive']
 
     try:
         await message.delete()
@@ -95,7 +100,8 @@ async def process_new_task_name(
         callback_msg=message,
         task=updated_task,
         status=updated_task.status,
-        state=state
+        state=state,
+        is_archive=is_archive
     )
 
     await state.clear()
@@ -112,7 +118,8 @@ async def change_task_description(
     await state.update_data(
         msg_id=callback_msg.message_id,
         task_id=callback_data.task_id,
-        page=callback_data.page
+        page=callback_data.page,
+        is_archive=callback_data.is_archive
     )
 
     await callback_msg.edit_text(text="<b>Write new task description:</b>\n\n"
@@ -138,6 +145,7 @@ async def process_new_task_description(
     task_id = data['task_id']
     page = data['page']
     msg_id = data['msg_id']
+    is_archive = data['is_archive']
 
     try:
         await message.delete()
@@ -158,7 +166,8 @@ async def process_new_task_description(
         callback_msg=message,
         task=updated_task,
         status=updated_task.status,
-        state=state
+        state=state,
+        is_archive=is_archive
     )
 
     await state.clear()
@@ -171,10 +180,12 @@ async def change_task_priority(
     callback_msg: Message,
     state: FSMContext
 ):
+
     await state.update_data(
         msg_id=callback_msg.message_id,
         task_id=callback_data.task_id,
-        page=callback_data.page
+        page=callback_data.page,
+        is_archive=callback_data.is_archive
     )
 
     await callback_msg.edit_text(text="<b>Select new task priority:</b>\n\n"
@@ -202,6 +213,7 @@ async def process_new_task_priority(
     task_id = data['task_id']
     page = data['page']
     msg_id = data['msg_id']
+    is_archive = data['is_archive']
 
     updated_task = await task_service.update_task_by_id(
         user_id=current_user.id,
@@ -217,7 +229,8 @@ async def process_new_task_priority(
         callback_msg=callback_msg,
         task=updated_task,
         status=updated_task.status,
-        state=state
+        state=state,
+        is_archive=is_archive
     )
 
     await state.clear()
@@ -230,10 +243,12 @@ async def change_task_deadline(
     callback_msg: Message,
     state: FSMContext
 ):
+
     await state.update_data(
         msg_id=callback_msg.message_id,
         task_id=callback_data.task_id,
-        page=callback_data.page
+        page=callback_data.page,
+        is_archive=callback_data.is_archive
     )
 
     await callback_msg.edit_text(text="<b>Select new task deadline:</b>\n\n"
@@ -261,6 +276,7 @@ async def process_new_deadline(
     task_id = data['task_id']
     page = data['page']
     msg_id = data['msg_id']
+    is_archive = data['is_archive']
 
     selected, date = await SimpleCalendar().process_selection(callback, callback_data)
 
@@ -282,7 +298,8 @@ async def process_new_deadline(
             callback_msg=callback_msg,
             task=updated_task,
             status=updated_task.status,
-            state=state
+            state=state,
+            is_archive=is_archive
         )
         await state.clear()
 
@@ -300,6 +317,7 @@ async def process_new_deadline(
             callback_msg=callback_msg,
             task=updated_task,
             status=updated_task.status,
-            state=state
+            state=state,
+            is_archive=is_archive
         )
         await state.clear()

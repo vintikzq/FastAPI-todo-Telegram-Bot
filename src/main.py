@@ -8,6 +8,7 @@ from src.handlers.tasks import router as tasks_handler_router
 from src.handlers.task_create import router as create_tasks_handler_router
 from src.handlers.task_edit import router as update_tasks_handler_router
 from src.handlers.errors import errors_router as error_catch_router
+from src.handlers.archive_tasks import router as archive_tasks_router
 from src.core.config import settings
 from src.middlewares.auth import AuthMiddleware
 from src.middlewares.callback_massage import CallBackMessageMiddleware
@@ -50,6 +51,7 @@ async def main():
     dp.message.middleware(AuthMiddleware())
     dp.callback_query.middleware(AuthMiddleware())
 
+    dp.include_router(archive_tasks_router)
     dp.include_router(error_catch_router)
     dp.include_router(common_handler_router)
     dp.include_router(tasks_handler_router)

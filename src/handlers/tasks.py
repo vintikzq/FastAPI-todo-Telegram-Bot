@@ -19,8 +19,12 @@ async def get_all_tasks(
         current_user: User,
         state: FSMContext
 ):
-    await render_tasks_list(message, task_service=task_service,
-                            user_id=current_user.id, current_page=1, is_edit=False, state=state)
+    await render_tasks_list(
+        message, task_service=task_service,
+        user_id=current_user.id, current_page=1,
+        is_edit=False, status=TodoStatus.ACTIVE,
+        state=state
+    )
 
 
 @router.callback_query(TaskPaginatorCallBack.filter(F.action.in_((ActionsNav.PAGE_DOWN, ActionsNav.PAGE_UP, ActionsNav.LIST))))
@@ -30,10 +34,25 @@ async def pagination_tasks(
     task_service: TaskService,
     current_user: User,
     callback_msg: Message,
-    state: FSMContext
+    state: FSMContext,
+    status: TodoStatus | None = None
 ):
     current_page = callback_data.page
-    await render_tasks_list(callback_msg, task_service, current_user.id, current_page=current_page, is_edit=True, state=state)
+
+    if callback_data.is_archive:
+        status = TodoStatus.DONE
+    else:
+        status = TodoStatus.ACTIVE
+
+    await render_tasks_list(
+        callback_msg,
+        task_service,
+        current_user.id,
+        current_page=current_page,
+        status=status,
+        is_edit=True,
+        state=state
+    )
 
     await callback.answer()
 
@@ -54,6 +73,7 @@ async def task_view(
             user_id=current_user.id,
             task_id=task_id
         )
+        is_archive = callback_data.is_archive
 
         await render_task_card(
             bot=bot,
@@ -61,6 +81,7 @@ async def task_view(
             callback_msg=callback_msg,
             task=task,
             status=task.status,
+            is_archive=is_archive,
             state=state)
 
     await callback.answer()
@@ -77,6 +98,7 @@ async def process_delete_task(
 ):
     task_id = callback_data.task_id
     current_page = callback_data.page or 1
+    is_archive = callback_data.is_archive
 
     if task_id:
         await task_service.delete_task_by_id(
@@ -89,7 +111,18 @@ async def process_delete_task(
             show_alert=False
         )
 
-    await render_tasks_list(callback_msg, task_service, current_user.id, current_page=current_page, is_edit=True, state=state)
+    status = TodoStatus.DONE if is_archive else TodoStatus.ACTIVE
+
+    await render_tasks_list(
+        callback_msg,
+        task_service,
+        current_user.id,
+        current_page=current_page,
+        is_edit=True,
+        state=state,
+        status=status,
+        is_archive=is_archive
+    )
 
     await callback.answer()
 
@@ -120,7 +153,8 @@ async def update_status(
         callback_msg=callback_msg,
         task=updated_task,
         status=updated_task.status,
-        state=state)
+        state=state,
+        is_archive=callback_data.is_archive)
 
     await callback.answer()
 
@@ -131,17 +165,20 @@ async def render_tasks_list(
     user_id: int,
     current_page: int,
     state: FSMContext,
-    is_edit: bool = False
+    status: TodoStatus | None = None,
+    is_edit: bool = False,
+    is_archive: bool = False
 
 ):
-    tasks, meta = await task_service.get_tasks(user_id=user_id, page=current_page)
+    tasks, meta = await task_service.get_tasks(user_id=user_id, page=current_page, status=status)
 
     if not tasks and current_page > 1:
-        return await render_tasks_list(message, task_service, user_id, current_page - 1, is_edit=True, state=state)
+        return await render_tasks_list(message, task_service, user_id, current_page - 1, is_edit=True, state=state, is_archive=is_archive)
 
     text = "Your tasks list:" if tasks else "Your task list is empty now!"
+
     kb = get_navigation_buttons(
-        tasks=tasks, current_page=current_page, has_next=meta) if tasks else None
+        tasks=tasks, current_page=current_page, has_next=meta, is_archive=is_archive) if tasks else None
 
     if is_edit:
         sent_msg = await message.edit_text(text=text, reply_markup=kb, parse_mode='HTML')
@@ -159,6 +196,7 @@ async def render_task_card(
     status: TodoStatus,
     bot: Bot,
     state: FSMContext,
+    is_archive: bool = False,
     msg_id: int | None = None,
     chat_id: int | None = None
 ):
@@ -168,7 +206,8 @@ async def render_task_card(
             reply_markup=get_task_buttons(
                 task_id=task.id,
                 current_page=page,
-                status=status),
+                status=status,
+                is_archive=is_archive),
             parse_mode='HTML'
         )
 
@@ -183,7 +222,8 @@ async def render_task_card(
             reply_markup=get_task_buttons(
                 task_id=task.id,
                 current_page=page,
-                status=status),
+                status=status,
+                is_archive=is_archive),
             parse_mode='HTML'
         )
 

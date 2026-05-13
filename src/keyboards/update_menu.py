@@ -5,7 +5,7 @@ from src.schemas.callbacks import TaskPaginatorCallBack, TaskUpdateCallback
 from src.schemas.enums import ActionsNav, ActionsUpdate
 
 
-def get_update_buttons(task_id: int, page: int):
+def get_update_buttons(task_id: int, page: int, is_archive: bool = False):
     builder = InlineKeyboardBuilder()
 
     buttons = []
@@ -16,7 +16,8 @@ def get_update_buttons(task_id: int, page: int):
                 callback_data=TaskUpdateCallback(
                     to_update=btn,
                     task_id=task_id,
-                    page=page).pack()
+                    page=page,
+                    is_archive=is_archive).pack()
             ))
 
     buttons.append(InlineKeyboardButton(
@@ -24,7 +25,8 @@ def get_update_buttons(task_id: int, page: int):
         callback_data=TaskPaginatorCallBack(
             action=ActionsNav.VIEW,
             page=page,
-            task_id=task_id).pack()
+            task_id=task_id,
+            is_archive=is_archive).pack()
     ))
     builder.row(*buttons)
 
