@@ -1,4 +1,5 @@
 from aiogram import F, Bot, Router
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message, User
 
@@ -17,8 +18,22 @@ async def get_all_tasks(
         message: Message,
         task_service: TaskService,
         current_user: User,
-        state: FSMContext
+        state: FSMContext,
+        bot: Bot
 ):
+
+    data = await state.get_data()
+    msg_id = data.get('last_msg_id')
+
+    try:
+        await bot.edit_message_reply_markup(
+            chat_id=message.chat.id,
+            message_id=msg_id,
+            reply_markup=None
+        )
+    except TelegramBadRequest:
+        pass
+
     await render_tasks_list(
         message, task_service=task_service,
         user_id=current_user.id, current_page=1,
@@ -181,7 +196,15 @@ async def render_tasks_list(
         tasks=tasks, current_page=current_page, has_next=meta, is_archive=is_archive) if tasks else None
 
     if is_edit:
-        sent_msg = await message.edit_text(text=text, reply_markup=kb, parse_mode='HTML')
+        try:
+            sent_msg = await message.edit_text(text=text, reply_markup=kb, parse_mode='HTML')
+        except TelegramBadRequest as e:
+
+            if "message is not modified" in e.message:
+                pass
+            else:
+                raise e
+
     else:
         sent_msg = await message.answer(text=text, reply_markup=kb, parse_mode='HTML')
 
@@ -201,32 +224,43 @@ async def render_task_card(
     chat_id: int | None = None
 ):
     if msg_id is None:
-        sent_msg = await callback_msg.edit_text(
-            text=task.format_to_html(),
-            reply_markup=get_task_buttons(
-                task_id=task.id,
-                current_page=page,
-                status=status,
-                is_archive=is_archive),
-            parse_mode='HTML'
-        )
+        try:
+            sent_msg = await callback_msg.edit_text(
+                text=task.format_to_html(),
+                reply_markup=get_task_buttons(
+                    task_id=task.id,
+                    current_page=page,
+                    status=status,
+                    is_archive=is_archive),
+                parse_mode='HTML'
+            )
+        except TelegramBadRequest as e:
+            if "message is not modified" in e.message:
+                pass
+            else:
+                raise e
 
         if isinstance(sent_msg, Message):
             await state.update_data(last_msg_id=sent_msg.message_id)
 
     else:
-        await bot.edit_message_text(
-            chat_id=chat_id,
-            message_id=msg_id,
-            text=task.format_to_html(),
-            reply_markup=get_task_buttons(
-                task_id=task.id,
-                current_page=page,
-                status=status,
-                is_archive=is_archive),
-            parse_mode='HTML'
-        )
-
+        try:
+            await bot.edit_message_text(
+                chat_id=chat_id,
+                message_id=msg_id,
+                text=task.format_to_html(),
+                reply_markup=get_task_buttons(
+                    task_id=task.id,
+                    current_page=page,
+                    status=status,
+                    is_archive=is_archive),
+                parse_mode='HTML'
+            )
+        except TelegramBadRequest as e:
+            if "message is not modified" in e.message:
+                pass
+            else:
+                raise e
         await state.update_data(last_msg_id=msg_id)
 
 
