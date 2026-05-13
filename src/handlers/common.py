@@ -10,4 +10,5 @@ router = Router()
 
 @router.message(Command('start'))
 async def start_handler(message: Message, current_user: User):
-    await message.answer(f"Welcome, {current_user.first_name}! I'm your task assistant. Use the menu below to manage your goals.", reply_markup=get_main_menu_keyboard())
+    await message.answer(f"Welcome, {current_user.first_name}! I'm your task assistant. Use the menu below to manage your goals.",
+                         reply_markup=get_main_menu_keyboard())

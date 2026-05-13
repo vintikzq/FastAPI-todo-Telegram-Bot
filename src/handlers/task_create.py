@@ -2,13 +2,13 @@ from datetime import datetime
 import logging
 
 from aiogram import F, Bot, Router
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.filters import Command, StateFilter
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, InlineKeyboardMarkup, Message, ReplyKeyboardRemove, User
 from aiogram_calendar import SimpleCalendar, SimpleCalendarCallback
 from aiogram_calendar.schemas import SimpleCalAct
-import httpx
-from pydantic import ValidationError
+
 
 from src.keyboards.main_menu import get_main_menu_keyboard
 from src.keyboards.task_menu import get_task_priority_buttons, skip_button
@@ -34,8 +34,10 @@ async def cancel_handler(message: Message, state: FSMContext, bot: Bot):
                 message_id=msg_id,
                 text="❌ Operation canceled",
                 reply_markup=None)
-        except Exception:
+        except TelegramBadRequest:
+            logger.warning("Message modification skipped")
             pass
+
     await state.clear()
     await message.answer("Return to main menu",
                          reply_markup=get_main_menu_keyboard())
@@ -59,9 +61,10 @@ async def start_task_creation(message: Message, state: FSMContext):
 async def process_task_name(message: Message, state: FSMContext, bot: Bot):
 
     await state.update_data(name=message.text)
+
     try:
         await message.delete()
-    except Exception:
+    except TelegramBadRequest:
         pass
 
     data = await state.get_data()
@@ -73,7 +76,8 @@ async def process_task_name(message: Message, state: FSMContext, bot: Bot):
             message_id=msg_id,
             text=f"Name saved. Write task description:",
             reply_markup=skip_button())
-    except Exception:
+    except TelegramBadRequest:
+        logger.warning("Message modification skipped")
         pass
 
     await state.set_state(CreateTaskState.waiting_for_description)
@@ -101,7 +105,7 @@ async def process_task_description(message: Message, state: FSMContext, bot: Bot
 
     try:
         await message.delete()
-    except Exception:
+    except TelegramBadRequest:
         pass
 
     data = await state.get_data()
@@ -113,7 +117,8 @@ async def process_task_description(message: Message, state: FSMContext, bot: Bot
             text="Description saved. Now select priority:",
             reply_markup=get_task_priority_buttons()
         )
-    except Exception:
+    except TelegramBadRequest:
+        logger.warning("Message modification skipped")
         pass
 
     await state.set_state(CreateTaskState.waiting_for_task_priority)
@@ -170,21 +175,13 @@ async def complete_task_creation(
     current_user: User,
     callback_msg: Message
 ):
-    try:
-        data = await state.get_data()
-        task_data = TaskRequest(**data)
-        task = await task_service.create_task(current_user.id, task_data)
-        await state.clear()
-        await callback_msg.edit_text(text=task.format_to_html(), parse_mode='HTML')
-        await callback_msg.answer("What's next?",
-                                  reply_markup=get_main_menu_keyboard())
-    except ValidationError:
-        await state.clear()
-        await callback_msg.answer("Data is invalid")
-    except httpx.ConnectError:
-        await callback_msg.answer("Check your connection and try again.")
-    except httpx.HTTPStatusError:
-        await callback_msg.answer("Something went wrong on our end. Please try later.")
+    data = await state.get_data()
+    task_data = TaskRequest(**data)
+    task = await task_service.create_task(current_user.id, task_data)
+    await state.clear()
+    await callback_msg.edit_text(text=task.format_to_html(), parse_mode='HTML')
+    await callback_msg.answer("What's next?",
+                              reply_markup=get_main_menu_keyboard())
 
 
 async def is_deadline_correct(

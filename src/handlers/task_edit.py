@@ -1,9 +1,11 @@
+import logging
+
 from aiogram import F, Bot, Router
+from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message, User
 from aiogram_calendar import SimpleCalendar, SimpleCalendarCallback
 from aiogram_calendar.schemas import SimpleCalAct
-import httpx
 
 from src.handlers.task_create import is_deadline_correct
 from src.handlers.tasks import render_task_card
@@ -15,7 +17,7 @@ from src.schemas.tasks import TaskUpdateRequest
 from src.services.tasks import TaskService
 from src.states.tasks import UpdateTaskState
 
-
+logger = logging.getLogger(__name__)
 router = Router()
 
 
@@ -76,32 +78,27 @@ async def process_new_task_name(
 
     try:
         await message.delete()
-    except:
+    except TelegramBadRequest:
         pass
 
-    try:
-        updated_task = await task_service.update_task_by_id(
-            user_id=current_user.id,
-            task_id=task_id,
-            data=TaskUpdateRequest(name=message.text)
-        )
+    updated_task = await task_service.update_task_by_id(
+        user_id=current_user.id,
+        task_id=task_id,
+        data=TaskUpdateRequest(name=message.text)
+    )
 
-        await render_task_card(
-            msg_id=msg_id,
-            chat_id=message.chat.id,
-            bot=bot,
-            page=page,
-            callback_msg=message,
-            task=updated_task,
-            status=updated_task.status,
+    await render_task_card(
+        msg_id=msg_id,
+        chat_id=message.chat.id,
+        bot=bot,
+        page=page,
+        callback_msg=message,
+        task=updated_task,
+        status=updated_task.status,
 
-        )
+    )
 
-    except httpx.HTTPStatusError as e:
-        if e.response.status_code == 404:
-            await bot.edit_message_text(message_id=msg_id, text="Task not found")
-    finally:
-        await state.clear()
+    await state.clear()
 
 
 @router.callback_query(TaskUpdateCallback.filter(F.to_update == ActionsUpdate.DESCRIPTION))
@@ -144,31 +141,26 @@ async def process_new_task_description(
 
     try:
         await message.delete()
-    except:
+    except TelegramBadRequest:
         pass
 
-    try:
-        updated_task = await task_service.update_task_by_id(
-            user_id=current_user.id,
-            task_id=task_id,
-            data=TaskUpdateRequest(description=message.text)
-        )
+    updated_task = await task_service.update_task_by_id(
+        user_id=current_user.id,
+        task_id=task_id,
+        data=TaskUpdateRequest(description=message.text)
+    )
 
-        await render_task_card(
-            msg_id=msg_id,
-            chat_id=message.chat.id,
-            bot=bot,
-            page=page,
-            callback_msg=message,
-            task=updated_task,
-            status=updated_task.status,
-        )
+    await render_task_card(
+        msg_id=msg_id,
+        chat_id=message.chat.id,
+        bot=bot,
+        page=page,
+        callback_msg=message,
+        task=updated_task,
+        status=updated_task.status,
+    )
 
-    except httpx.HTTPStatusError as e:
-        if e.response.status_code == 404:
-            await bot.edit_message_text(message_id=msg_id, text="Task not found")
-    finally:
-        await state.clear()
+    await state.clear()
 
 
 @router.callback_query(TaskUpdateCallback.filter(F.to_update == ActionsUpdate.PRIORITY))
@@ -210,28 +202,23 @@ async def process_new_task_priority(
     page = data['page']
     msg_id = data['msg_id']
 
-    try:
-        updated_task = await task_service.update_task_by_id(
-            user_id=current_user.id,
-            task_id=task_id,
-            data=TaskUpdateRequest(priority=callback_data.value)
-        )
+    updated_task = await task_service.update_task_by_id(
+        user_id=current_user.id,
+        task_id=task_id,
+        data=TaskUpdateRequest(priority=callback_data.value)
+    )
 
-        await render_task_card(
-            msg_id=msg_id,
-            chat_id=callback_msg.chat.id,
-            bot=bot,
-            page=page,
-            callback_msg=callback_msg,
-            task=updated_task,
-            status=updated_task.status
-        )
+    await render_task_card(
+        msg_id=msg_id,
+        chat_id=callback_msg.chat.id,
+        bot=bot,
+        page=page,
+        callback_msg=callback_msg,
+        task=updated_task,
+        status=updated_task.status
+    )
 
-    except httpx.HTTPStatusError as e:
-        if e.response.status_code == 404:
-            await bot.edit_message_text(message_id=msg_id, text="Task not found")
-    finally:
-        await state.clear()
+    await state.clear()
 
 
 @router.callback_query(TaskUpdateCallback.filter(F.to_update == ActionsUpdate.DEADLINE))
@@ -274,47 +261,41 @@ async def process_new_deadline(
     msg_id = data['msg_id']
 
     selected, date = await SimpleCalendar().process_selection(callback, callback_data)
-    try:
 
-        if selected:
-            if not await is_deadline_correct(callback, callback_msg, date):
-                return
+    if selected:
+        if not await is_deadline_correct(callback, callback_msg, date):
+            return
 
-            iso_date = date.isoformat()
-            updated_task = await task_service.update_task_by_id(
-                user_id=current_user.id,
-                task_id=task_id,
-                data=TaskUpdateRequest(due_date=iso_date))
+        iso_date = date.isoformat()
+        updated_task = await task_service.update_task_by_id(
+            user_id=current_user.id,
+            task_id=task_id,
+            data=TaskUpdateRequest(due_date=iso_date))
 
-            await render_task_card(
-                msg_id=msg_id,
-                chat_id=callback_msg.chat.id,
-                bot=bot,
-                page=page,
-                callback_msg=callback_msg,
-                task=updated_task,
-                status=updated_task.status
-            )
-            await state.clear()
+        await render_task_card(
+            msg_id=msg_id,
+            chat_id=callback_msg.chat.id,
+            bot=bot,
+            page=page,
+            callback_msg=callback_msg,
+            task=updated_task,
+            status=updated_task.status
+        )
+        await state.clear()
 
-        elif callback_data.act == SimpleCalAct.cancel:
-            updated_task = await task_service.update_task_by_id(
-                user_id=current_user.id,
-                task_id=task_id,
-                data=TaskUpdateRequest(due_date=None))
+    elif callback_data.act == SimpleCalAct.cancel:
+        updated_task = await task_service.update_task_by_id(
+            user_id=current_user.id,
+            task_id=task_id,
+            data=TaskUpdateRequest(due_date=None))
 
-            await render_task_card(
-                msg_id=msg_id,
-                chat_id=callback_msg.chat.id,
-                bot=bot,
-                page=page,
-                callback_msg=callback_msg,
-                task=updated_task,
-                status=updated_task.status
-            )
-            await state.clear()
-
-    except httpx.HTTPStatusError as e:
-        if e.response.status_code == 404:
-            await bot.edit_message_text(message_id=msg_id, text="Task not found")
-            await state.clear()
+        await render_task_card(
+            msg_id=msg_id,
+            chat_id=callback_msg.chat.id,
+            bot=bot,
+            page=page,
+            callback_msg=callback_msg,
+            task=updated_task,
+            status=updated_task.status
+        )
+        await state.clear()

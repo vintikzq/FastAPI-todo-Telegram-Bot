@@ -48,22 +48,18 @@ async def task_view(
 ):
     task_id = callback_data.task_id
     if task_id:
-        try:
-            task = await task_service.get_task_by_id(
-                user_id=current_user.id,
-                task_id=task_id
-            )
+        task = await task_service.get_task_by_id(
+            user_id=current_user.id,
+            task_id=task_id
+        )
 
-            await render_task_card(
-                bot=bot,
-                page=callback_data.page,
-                callback_msg=callback_msg,
-                task=task,
-                status=task.status)
+        await render_task_card(
+            bot=bot,
+            page=callback_data.page,
+            callback_msg=callback_msg,
+            task=task,
+            status=task.status)
 
-        except httpx.HTTPStatusError as e:
-            if e.response.status_code == 404:
-                await callback_msg.edit_text(text="Task not found")
     await callback.answer()
 
 
@@ -121,17 +117,6 @@ async def update_status(
         status=updated_task.status)
 
     await callback.answer()
-
-
-@router.callback_query(F.data == 'go_to_menu')
-async def go_to_main_menu(
-    callback: CallbackQuery,
-    callback_msg: Message
-):
-    await callback_msg.answer(text="Returned to main menu",
-                              reply_markup=get_main_menu_keyboard())
-
-    callback.answer()
 
 
 async def render_tasks_list(
