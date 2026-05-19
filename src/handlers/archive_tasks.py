@@ -21,6 +21,7 @@ async def pagination_archive_tasks(
     state: FSMContext
 ):
     page = callback_data.page
+    is_archive = callback_data.is_archive
 
     await render_tasks_list(
         message=callback_msg,
@@ -29,6 +30,7 @@ async def pagination_archive_tasks(
         current_page=page,
         state=state,
         is_edit=True,
+        is_archive=is_archive,
         status=TodoStatus.DONE
     )
 

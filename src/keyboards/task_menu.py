@@ -106,7 +106,7 @@ def get_task_buttons(task_id: int, current_page: int, status: TodoStatus | None 
         back_to_list_btn = InlineKeyboardButton(
             text="🔙 Back to archive",
             callback_data=TaskPaginatorCallBack(
-                action=ActionsNav.LIST,
+                action=ActionsNav.ARCHIVE,
                 page=current_page,
                 is_archive=True).pack()
         )
