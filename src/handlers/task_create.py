@@ -90,7 +90,7 @@ async def process_task_description_skip(
         callback_msg: Message):
 
     await state.update_data(description=None)
-    await callback.answer(f'Skipped')
+    await callback.answer('Skipped')
 
     await callback_msg.edit_text(
         "Description skipped. Now select priority:",
