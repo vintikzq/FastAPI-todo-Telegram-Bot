@@ -7,6 +7,7 @@ from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import CallbackQuery, Message, User
 import pytest
 
+from src.schemas.enums import TodoStatus
 from src.schemas.tasks import TaskResponse
 from src.services.tasks import TaskService
 
@@ -40,6 +41,7 @@ def task_service():
 
     mock_task_service.get_stats_counter = AsyncMock()
     mock_task_service.create_task = AsyncMock()
+    mock_task_service.delete_task = AsyncMock()
 
     mock_task_service.get_tasks = AsyncMock()
 
@@ -61,6 +63,7 @@ def message():
 
     mock_chat = MagicMock()
     mock_chat.id = 999
+    mock_message.message_id = 1
     mock_message.chat = mock_chat
     mock_message.delete = AsyncMock(return_value=None)
     mock_message.answer = AsyncMock(return_value=None)
@@ -90,6 +93,18 @@ def callback_query():
 def fake_task():
     mock_fake_task = MagicMock(spec=TaskResponse)
     mock_fake_task.id = 1
+    mock_fake_task.status = TodoStatus.PENDING
     mock_fake_task.friendly_format_for_buttons = MagicMock(
         return_value='Task')
     return mock_fake_task
+
+
+@pytest.fixture()
+async def prepared_update_state(state):
+
+    await state.update_data(
+        task_id=1, page=1,
+        msg_id=1, is_archive=False
+    )
+
+    return state

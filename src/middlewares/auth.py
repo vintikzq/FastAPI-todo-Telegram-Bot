@@ -1,10 +1,7 @@
-import logging
 from typing import Any, Awaitable, Callable
 
 from aiogram import BaseMiddleware
 from aiogram.types import CallbackQuery, Message, TelegramObject
-
-logger = logging.getLogger(__name__)
 
 
 class AuthMiddleware(BaseMiddleware):
