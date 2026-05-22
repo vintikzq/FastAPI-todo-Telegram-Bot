@@ -1,15 +1,18 @@
-import logging
-
 import httpx
 
 from src.core.config import settings
 from src.core.exceptions import AppBaseException, BackendServerError, NetworkConnectionError, NotAuthorizedError, ResourceNotFoundError, ValidationError
 from src.storage.tokens import TokenStorage
 
-logger = logging.getLogger(__name__)
-
 
 class BaseClient:
+    """
+    Abstract fault-tolerant gateway for external REST API integration.
+
+    Encapsulates global network exceptions handling, HTTP mapping,
+    and automatic token cache invalidation.
+    """
+
     def __init__(self, session: httpx.AsyncClient, token_storage: TokenStorage) -> None:
         self.base_url = settings.BASE_API_URL
         self.session = session

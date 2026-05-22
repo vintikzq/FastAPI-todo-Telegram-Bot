@@ -1,5 +1,3 @@
-import logging
-
 from aiogram import F, Bot, Router
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
@@ -17,7 +15,6 @@ from src.schemas.tasks import TaskUpdateRequest
 from src.services.tasks import TaskService
 from src.states.tasks import UpdateTaskState
 
-logger = logging.getLogger(__name__)
 router = Router()
 
 

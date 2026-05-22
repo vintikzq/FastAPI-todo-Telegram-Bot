@@ -4,6 +4,12 @@ from src.core.config import settings
 
 
 class TokenStorage():
+    """
+    Low-level asynchronous Redis adapter for auth session caching.
+
+    Provides atomic CRUD operations for user JWT tokens backed by TTL enforcement.
+    """
+
     def __init__(self, redis_client: Redis) -> None:
         self.redis_client = redis_client
 

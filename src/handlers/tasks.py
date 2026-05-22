@@ -185,6 +185,11 @@ async def render_tasks_list(
     is_archive: bool = False
 
 ):
+    """
+    Rendering pipeline for the interactive tasks list.
+
+    Implements the Single Message UI pattern by dynamically refreshing canvas markups.
+    """
     tasks, meta = await task_service.get_tasks(user_id=user_id, page=current_page, status=status)
 
     if not tasks and current_page > 1:

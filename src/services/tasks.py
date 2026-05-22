@@ -9,6 +9,12 @@ from src.storage.tokens import TokenStorage
 
 
 class TaskService(BaseClient):
+    """
+    Business logic gateway for task CRUD operations.
+
+    Transforms raw API payload into domain DTOs and handles edge-case pagination.
+    """
+
     def __init__(self, session: AsyncClient, token_storage: TokenStorage) -> None:
         super().__init__(session, token_storage)
         self.token_storage = token_storage

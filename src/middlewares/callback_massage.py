@@ -6,6 +6,12 @@ from aiogram.types import CallbackQuery, Message
 
 
 class CallBackMessageMiddleware(BaseMiddleware):
+    """
+    CallbackQuery updates interceptor.
+
+    Extracts the underlying Message object and injects it into the handler data context.
+    """
+
     async def __call__(
         self,
         handler: Callable[[CallbackQuery, dict[str, Any]], Awaitable[Any]],

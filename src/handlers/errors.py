@@ -20,6 +20,11 @@ ERROR_MESSAGES = {
 
 @errors_router.errors()
 async def errors_catch(event: ErrorEvent, state: FSMContext):
+    """
+    Global runtime exception dispatcher.
+
+    Maps domain network errors into UI alerts, logs session context, and manages FSM stability.
+    """
 
     exception_type = type(event.exception)
     error_info = ERROR_MESSAGES.get(

@@ -5,6 +5,12 @@ from aiogram.types import CallbackQuery, Message, TelegramObject
 
 
 class AuthMiddleware(BaseMiddleware):
+    """
+    S2S authentication interceptor for the aiogram update pipeline.
+
+    Extracts Telegram user context and guarantees explicit JWT token injection.
+    """
+
     async def __call__(
         self,
         handler: Callable[[TelegramObject, dict[str, Any]], Awaitable[Any]],

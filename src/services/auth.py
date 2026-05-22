@@ -1,14 +1,14 @@
-import logging
-
-import httpx
-
 from src.services.base import BaseClient
 from src.core.config import settings
 
-logger = logging.getLogger(__name__)
-
 
 class AuthService(BaseClient):
+    """
+    Silent Server-to-Server (S2S) authentication component.
+
+    Manages the lifecycle of session JWT tokens and coordinates Redis cache warming.
+    """
+
     async def resolve_user(self, user_id: int):
         return await self._make_request('post', '/login/telegram', data={'telegram_id': user_id}, headers={'X-Internal-Secret': settings.INTERNAL_BOT_SECRET})
 
