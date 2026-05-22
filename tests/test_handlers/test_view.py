@@ -9,15 +9,15 @@ from src.schemas.enums import ActionsNav, ActionsView, MenuButtons, TodoStatus
 
 @pytest.mark.asyncio
 async def test_stats_handler_should_delete_previous_keyboard_and_write_user_stats(
-    state, bot, task_service,
+    state, bot, mock_task_service,
     message, fake_stats_response,
     current_user
 ):
     await state.update_data(last_msg_id=111)
     message.text = MenuButtons.STATS
-    task_service.get_stats_counter.return_value = fake_stats_response
+    mock_task_service.get_stats_counter.return_value = fake_stats_response
 
-    await stats_handler(message, task_service, current_user, bot, state)
+    await stats_handler(message, mock_task_service, current_user, bot, state)
 
     assert message.answer.call_args.kwargs['reply_markup'] is not None
 
@@ -28,7 +28,7 @@ async def test_stats_handler_should_delete_previous_keyboard_and_write_user_stat
         reply_markup=None
     )
 
-    task_service.get_stats_counter.assert_called_once_with(999)
+    mock_task_service.get_stats_counter.assert_called_once_with(999)
     message.answer.assert_called_once()
 
 
@@ -46,7 +46,7 @@ async def test_stats_handler_should_delete_previous_keyboard_and_write_user_stat
 )
 async def test_archive_paginator_should_render_correct_ui_states_based_on_backend_data(
     callback_query, state,
-    message, task_service,
+    message, mock_task_service,
     current_user, tasks_meta,
     has_next, expected_text,
     has_keyboard, has_next_button,
@@ -57,11 +57,11 @@ async def test_archive_paginator_should_render_correct_ui_states_based_on_backen
 
     tasks = [fake_task for _ in tasks_meta]
 
-    task_service.get_tasks.return_value = (tasks, has_next)
+    mock_task_service.get_tasks.return_value = (tasks, has_next)
 
     await pagination_archive_tasks(
         callback_query, callback_data,
-        message, task_service,
+        message, mock_task_service,
         current_user, state
     )
 
@@ -76,7 +76,7 @@ async def test_archive_paginator_should_render_correct_ui_states_based_on_backen
     )
     assert actual_next_button_present == has_next_button
 
-    task_service.get_tasks.assert_called_once_with(
+    mock_task_service.get_tasks.assert_called_once_with(
         user_id=999, page=1, status=TodoStatus.DONE)
     message.edit_text.assert_called_once()
     callback_query.answer.assert_called_once()
@@ -98,7 +98,7 @@ async def test_archive_paginator_should_render_correct_ui_states_based_on_backen
 )
 async def test_active_tasks_paginator_should_render_correct_ui_states_based_on_backend_data(
     callback_query, state,
-    message, task_service,
+    message, mock_task_service,
     current_user, tasks_meta,
     has_next, expected_text,
     has_keyboard, has_next_button,
@@ -109,11 +109,11 @@ async def test_active_tasks_paginator_should_render_correct_ui_states_based_on_b
 
     tasks = [fake_task for _ in tasks_meta]
 
-    task_service.get_tasks.return_value = (tasks, has_next)
+    mock_task_service.get_tasks.return_value = (tasks, has_next)
 
     await pagination_tasks(
         callback_query, callback_data,
-        task_service, current_user,
+        mock_task_service, current_user,
         message, state
     )
 
@@ -128,7 +128,7 @@ async def test_active_tasks_paginator_should_render_correct_ui_states_based_on_b
     )
     assert actual_next_button_present == has_next_button
 
-    task_service.get_tasks.assert_called_once_with(
+    mock_task_service.get_tasks.assert_called_once_with(
         user_id=999, page=1, status=TodoStatus.ACTIVE)
     message.edit_text.assert_called_once()
     callback_query.answer.assert_called_once()
@@ -140,22 +140,22 @@ async def test_active_tasks_paginator_should_render_correct_ui_states_based_on_b
 async def test_task_update_status_should_edit_task_status(
     callback_query, message, bot,
     state, current_user,
-    task_service, fake_task
+    mock_task_service, fake_task
 ):
     callback_data = TaskStatusCallback(
         new_status=TodoStatus.DONE, task_id=1, page=1)
 
-    task_service.update_task_by_id.return_value = fake_task
+    mock_task_service.update_task_by_id.return_value = fake_task
 
     await update_status(
         callback_query, callback_data,
-        task_service, current_user,
+        mock_task_service, current_user,
         message, bot, state
     )
 
-    task_service.update_task_by_id.assert_called_once()
+    mock_task_service.update_task_by_id.assert_called_once()
 
-    call_args = task_service.update_task_by_id.call_args
+    call_args = mock_task_service.update_task_by_id.call_args
     assert call_args.args[0] == 999
     assert call_args.args[1] == 1
     assert call_args.args[2].status == TodoStatus.DONE
@@ -165,17 +165,17 @@ async def test_task_update_status_should_edit_task_status(
 
 @pytest.mark.asyncio
 async def test_task_deletion_should_delete_task_and_show_success_alert(
-    callback_query, task_service,
+    callback_query, mock_task_service,
     current_user, message, state,
     fake_task
 ):
     callback_data = TaskViewCallback(
         action=ActionsView.DELETE, page=1, task_id=1)
 
-    task_service.get_tasks.return_value = (fake_task, False)
+    mock_task_service.get_tasks.return_value = (fake_task, False)
     await process_delete_task(
         callback_query, callback_data,
-        task_service, current_user,
+        mock_task_service, current_user,
         message, state
     )
 

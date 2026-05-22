@@ -47,16 +47,16 @@ async def test_change_task_name_should_ask_for_name_and_set_state(
 
 @pytest.mark.asyncio
 async def test_process_new_task_name_should_update_task_name_and_clear_state(
-    message, task_service,
+    message, mock_task_service,
     current_user, bot, prepared_update_state
 ):
     message.text = 'job'
 
-    await process_new_task_name(message, task_service, current_user, bot, prepared_update_state)
+    await process_new_task_name(message, mock_task_service, current_user, bot, prepared_update_state)
 
     message.delete.assert_called_once()
 
-    task_update_kwargs = task_service.update_task_by_id.call_args.kwargs
+    task_update_kwargs = mock_task_service.update_task_by_id.call_args.kwargs
     assert task_update_kwargs['user_id'] == current_user.id
     assert task_update_kwargs['task_id'] == 1
     assert task_update_kwargs['data'].name == message.text
@@ -82,16 +82,16 @@ async def test_change_task_description_should_ask_for_description_and_set_state(
 
 @pytest.mark.asyncio
 async def test_process_new_task_description_should_update_description_and_clear_state(
-    message, task_service,
+    message, mock_task_service,
     current_user, bot, prepared_update_state
 ):
     message.text = 'today'
 
-    await process_new_task_description(message, task_service, current_user, bot, prepared_update_state)
+    await process_new_task_description(message, mock_task_service, current_user, bot, prepared_update_state)
 
     message.delete.assert_called_once()
 
-    task_update_kwargs = task_service.update_task_by_id.call_args.kwargs
+    task_update_kwargs = mock_task_service.update_task_by_id.call_args.kwargs
     assert task_update_kwargs['user_id'] == current_user.id
     assert task_update_kwargs['task_id'] == 1
     assert task_update_kwargs['data'].description == message.text
@@ -117,18 +117,18 @@ async def test_change_task_priority_should_ask_for_priority_set_keyboard_and_set
 
 @pytest.mark.asyncio
 async def test_process_new_task_priority_should_update_priority_and_clear_state(
-    callback_query, message, task_service,
+    callback_query, message, mock_task_service,
     current_user, bot, prepared_update_state
 ):
     callback_data = TaskPriorityCallback(value=TodoPriority.HIGH)
 
     await process_new_task_priority(
         callback_query, callback_data,
-        message, task_service, current_user,
+        message, mock_task_service, current_user,
         bot, prepared_update_state
     )
 
-    task_update_kwargs = task_service.update_task_by_id.call_args.kwargs
+    task_update_kwargs = mock_task_service.update_task_by_id.call_args.kwargs
     assert task_update_kwargs['user_id'] == current_user.id
     assert task_update_kwargs['task_id'] == 1
     assert task_update_kwargs['data'].priority == callback_data.value
@@ -169,7 +169,7 @@ async def test_change_task_deadline_should_ask_for_deadline_set_keyboard_and_set
 )
 async def test_process_new_deadline_should_process_correct_based_on_selected_data(
     callback_query, message,
-    prepared_update_state, task_service, current_user,
+    prepared_update_state, mock_task_service, current_user,
     calendar_return, expected_state,
     should_update_task, act_value, bot
 ):
@@ -181,9 +181,9 @@ async def test_process_new_deadline_should_process_correct_based_on_selected_dat
         mock_selection.return_value = calendar_return
         await process_new_deadline(
             callback_query, callback_data, message,
-            task_service, current_user, bot,
+            mock_task_service, current_user, bot,
             prepared_update_state
         )
 
     assert await prepared_update_state.get_state() == expected_state
-    assert should_update_task == task_service.update_task_by_id.called
+    assert should_update_task == mock_task_service.update_task_by_id.called

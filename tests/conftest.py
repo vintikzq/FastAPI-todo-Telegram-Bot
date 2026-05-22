@@ -1,3 +1,4 @@
+import datetime
 from unittest.mock import AsyncMock, MagicMock
 
 from aiogram import Bot
@@ -5,11 +6,14 @@ from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.base import StorageKey
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import CallbackQuery, Message, User
+import httpx
 import pytest
 
-from src.schemas.enums import TodoStatus
+from src.schemas.enums import TodoPriority, TodoStatus
 from src.schemas.tasks import TaskResponse
+from src.services.auth import AuthService
 from src.services.tasks import TaskService
+from src.storage.tokens import TokenStorage
 
 
 @pytest.fixture()
@@ -36,7 +40,7 @@ def bot():
 
 
 @pytest.fixture()
-def task_service():
+def mock_task_service():
     mock_task_service = MagicMock(spec=TaskService)
 
     mock_task_service.get_stats_counter = AsyncMock()
@@ -108,3 +112,46 @@ async def prepared_update_state(state):
     )
 
     return state
+
+
+@pytest.fixture()
+def session():
+    mock_session = MagicMock(spec=httpx.AsyncClient)
+    mock_session.request = AsyncMock()
+    return mock_session
+
+
+@pytest.fixture()
+def storage():
+    mock_storage = MagicMock(spec=TokenStorage)
+    mock_storage.delete_token = AsyncMock()
+    mock_storage.save_token = AsyncMock()
+    return mock_storage
+
+
+@pytest.fixture()
+def request_url():
+    return "http://test/task/1"
+
+
+@pytest.fixture()
+def task_data():
+    return {
+        'id': 1,
+        'name': 'task',
+        'status': TodoStatus.PENDING,
+        'priority': TodoPriority.LOW,
+        'description': None,
+        'due_date': None,
+        'created_at': datetime.date.today().isoformat()
+    }
+
+
+@pytest.fixture()
+def task_service(session, storage):
+    return TaskService(session=session, token_storage=storage)
+
+
+@pytest.fixture()
+def auth_service(session, storage):
+    return AuthService(session=session, token_storage=storage)

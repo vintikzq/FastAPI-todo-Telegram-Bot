@@ -120,7 +120,7 @@ async def test_process_task_priority_should_save_priority_and_set_state(
 )
 async def test_process_deadline_should_process_correct_based_on_selected_data(
     callback_query, message,
-    state, task_service, current_user,
+    state, mock_task_service, current_user,
     calendar_return, expected_state,
     should_create_task, act_value
 ):
@@ -132,9 +132,9 @@ async def test_process_deadline_should_process_correct_based_on_selected_data(
         mock_selection.return_value = calendar_return
         await process_deadline(
             callback_query, message,
-            callback_data, state, task_service,
+            callback_data, state, mock_task_service,
             current_user
         )
 
     assert await state.get_state() == expected_state
-    assert should_create_task == task_service.create_task.called
+    assert should_create_task == mock_task_service.create_task.called
