@@ -1,11 +1,8 @@
 from typing import Any
 
-from httpx import AsyncClient
-
 from src.schemas.enums import TodoStatus
 from src.schemas.tasks import TaskRequest, TaskResponse, TaskStatsResponse, TaskUpdateRequest
 from src.services.base import BaseClient
-from src.storage.tokens import TokenStorage
 
 
 class TaskService(BaseClient):
@@ -14,10 +11,6 @@ class TaskService(BaseClient):
 
     Transforms raw API payload into domain DTOs and handles edge-case pagination.
     """
-
-    def __init__(self, session: AsyncClient, token_storage: TokenStorage) -> None:
-        super().__init__(session, token_storage)
-        self.token_storage = token_storage
 
     async def get_tasks(
         self, user_id: int, page: int = 1, limit: int = 5, status: TodoStatus | None = None

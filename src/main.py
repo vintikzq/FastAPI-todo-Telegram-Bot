@@ -13,7 +13,7 @@ from src.handlers.task_create import router as create_tasks_handler_router
 from src.handlers.task_edit import router as update_tasks_handler_router
 from src.handlers.tasks import router as tasks_handler_router
 from src.middlewares.auth import AuthMiddleware
-from src.middlewares.callback_massage import CallBackMessageMiddleware
+from src.middlewares.callback_message import CallBackMessageMiddleware
 from src.services.auth import AuthService
 from src.services.tasks import TaskService
 from src.storage.tokens import TokenStorage
@@ -42,7 +42,7 @@ async def on_shutdown(dispatcher: Dispatcher) -> None:
     session: httpx.AsyncClient = dispatcher["http_session"]
     redis_client: Redis = dispatcher["redis_client"]
     await session.aclose()
-    await redis_client.close()
+    await redis_client.aclose()
 
 
 async def main() -> None:
