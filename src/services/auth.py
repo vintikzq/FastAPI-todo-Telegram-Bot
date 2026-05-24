@@ -1,3 +1,5 @@
+from typing import Any
+
 from src.core.config import settings
 from src.services.base import BaseClient
 
@@ -9,7 +11,7 @@ class AuthService(BaseClient):
     Manages the lifecycle of session JWT tokens and coordinates Redis cache warming.
     """
 
-    async def resolve_user(self, user_id: int):
+    async def resolve_user(self, user_id: int) -> Any:
         return await self._make_request(
             "post",
             "/login/telegram",
@@ -17,7 +19,7 @@ class AuthService(BaseClient):
             headers={"X-Internal-Secret": settings.INTERNAL_BOT_SECRET},
         )
 
-    async def get_auth_token(self, user_id: int):
+    async def get_auth_token(self, user_id: int) -> Any:
         token = await self.token_storage.get_token(user_id)
         if token:
             return token

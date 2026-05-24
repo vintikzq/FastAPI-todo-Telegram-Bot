@@ -52,7 +52,7 @@ class TaskService(BaseClient):
         )
         return TaskResponse(**task)
 
-    async def get_stats_counter(self, user_id: int):
+    async def get_stats_counter(self, user_id: int) -> TaskStatsResponse:
         tasks_stats = await self._make_request("get", "/tasks/stats", user_id)
 
         return TaskStatsResponse(**tasks_stats)

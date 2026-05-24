@@ -1,11 +1,11 @@
-from aiogram.types import InlineKeyboardButton
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from src.schemas.callbacks import TaskPaginatorCallBack, TaskUpdateCallback
 from src.schemas.enums import ActionsNav, ActionsUpdate
 
 
-def get_update_buttons(task_id: int, page: int, is_archive: bool = False):
+def get_update_buttons(task_id: int, page: int, is_archive: bool = False) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
 
     buttons = []

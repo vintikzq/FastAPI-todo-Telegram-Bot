@@ -1,4 +1,5 @@
 import logging
+from typing import Any
 
 from aiogram import Router
 from aiogram.fsm.context import FSMContext
@@ -15,7 +16,7 @@ from src.core.exceptions import (
 logger = logging.getLogger(__name__)
 errors_router = Router()
 
-ERROR_MESSAGES = {
+ERROR_MESSAGES: dict[type[Exception], dict[str, Any]] = {
     ResourceNotFoundError: {"text": "Task not found", "clear_state": True},
     BackendServerError: {
         "text": "Something went wrong on our end. Please try later.",
@@ -28,7 +29,7 @@ ERROR_MESSAGES = {
 
 
 @errors_router.errors()
-async def errors_catch(event: ErrorEvent, state: FSMContext):
+async def errors_catch(event: ErrorEvent, state: FSMContext) -> None:
     """
     Global runtime exception dispatcher.
 

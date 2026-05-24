@@ -1,3 +1,5 @@
+import contextlib
+
 from aiogram import Bot, F, Router
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
@@ -15,17 +17,15 @@ router = Router()
 @router.message(F.text == MenuButtons.MY_TASKS)
 async def get_all_tasks(
     message: Message, task_service: TaskService, current_user: User, state: FSMContext, bot: Bot
-):
+) -> None:
 
     data = await state.get_data()
     msg_id = data.get("last_msg_id")
 
-    try:
+    with contextlib.suppress(TelegramBadRequest):
         await bot.edit_message_reply_markup(
             chat_id=message.chat.id, message_id=msg_id, reply_markup=None
         )
-    except TelegramBadRequest:
-        pass
 
     await render_tasks_list(
         message,
@@ -51,13 +51,10 @@ async def pagination_tasks(
     callback_msg: Message,
     state: FSMContext,
     status: TodoStatus | None = None,
-):
+) -> None:
     current_page = callback_data.page
 
-    if callback_data.is_archive:
-        status = TodoStatus.DONE
-    else:
-        status = TodoStatus.ACTIVE
+    status = TodoStatus.DONE if callback_data.is_archive else TodoStatus.ACTIVE
 
     await render_tasks_list(
         callback_msg,
@@ -81,7 +78,7 @@ async def task_view(
     callback_msg: Message,
     bot: Bot,
     state: FSMContext,
-):
+) -> None:
     task_id = callback_data.task_id
     if task_id:
         task = await task_service.get_task_by_id(user_id=current_user.id, task_id=task_id)
@@ -108,7 +105,7 @@ async def process_delete_task(
     current_user: User,
     callback_msg: Message,
     state: FSMContext,
-):
+) -> None:
     task_id = callback_data.task_id
     current_page = callback_data.page or 1
     is_archive = callback_data.is_archive
@@ -143,7 +140,7 @@ async def update_status(
     callback_msg: Message,
     bot: Bot,
     state: FSMContext,
-):
+) -> None:
     task_id = callback_data.task_id
 
     user_id = current_user.id
@@ -176,7 +173,7 @@ async def render_tasks_list(
     status: TodoStatus | None = None,
     is_edit: bool = False,
     is_archive: bool = False,
-):
+) -> None:
     """
     Rendering pipeline for the interactive tasks list.
 
@@ -231,7 +228,7 @@ async def render_task_card(
     is_archive: bool = False,
     msg_id: int | None = None,
     chat_id: int | None = None,
-):
+) -> None:
     if msg_id is None:
         try:
             sent_msg = await callback_msg.edit_text(
@@ -270,5 +267,5 @@ async def render_task_card(
 
 
 @router.callback_query(F.data == "ignore")
-async def ignore_callback(callback: CallbackQuery):
+async def ignore_callback(callback: CallbackQuery) -> None:
     await callback.answer()

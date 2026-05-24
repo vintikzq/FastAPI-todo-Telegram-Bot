@@ -1,3 +1,5 @@
+import contextlib
+
 from aiogram import Bot, F, Router
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
@@ -21,7 +23,7 @@ router = Router()
 @router.callback_query(TaskViewCallback.filter(F.action == ActionsView.UPDATE))
 async def process_update_menu(
     callback: CallbackQuery, callback_data: TaskViewCallback, callback_msg: Message
-):
+) -> None:
     is_archive = callback_data.is_archive
 
     await callback_msg.edit_text(
@@ -40,7 +42,7 @@ async def change_task_name(
     callback_data: TaskUpdateCallback,
     callback_msg: Message,
     state: FSMContext,
-):
+) -> None:
 
     await state.update_data(
         msg_id=callback_msg.message_id,
@@ -63,7 +65,7 @@ async def change_task_name(
 @router.message(UpdateTaskState.waiting_for_new_task_name)
 async def process_new_task_name(
     message: Message, task_service: TaskService, current_user: User, bot: Bot, state: FSMContext
-):
+) -> None:
     data = await state.get_data()
 
     task_id = data["task_id"]
@@ -71,10 +73,8 @@ async def process_new_task_name(
     msg_id = data["msg_id"]
     is_archive = data["is_archive"]
 
-    try:
+    with contextlib.suppress(TelegramBadRequest):
         await message.delete()
-    except TelegramBadRequest:
-        pass
 
     updated_task = await task_service.update_task_by_id(
         user_id=current_user.id, task_id=task_id, data=TaskUpdateRequest(name=message.text)
@@ -101,7 +101,7 @@ async def change_task_description(
     callback_data: TaskUpdateCallback,
     callback_msg: Message,
     state: FSMContext,
-):
+) -> None:
 
     await state.update_data(
         msg_id=callback_msg.message_id,
@@ -124,7 +124,7 @@ async def change_task_description(
 @router.message(UpdateTaskState.waiting_for_new_description)
 async def process_new_task_description(
     message: Message, task_service: TaskService, current_user: User, bot: Bot, state: FSMContext
-):
+) -> None:
     data = await state.get_data()
 
     task_id = data["task_id"]
@@ -132,10 +132,8 @@ async def process_new_task_description(
     msg_id = data["msg_id"]
     is_archive = data["is_archive"]
 
-    try:
+    with contextlib.suppress(TelegramBadRequest):
         await message.delete()
-    except TelegramBadRequest:
-        pass
 
     updated_task = await task_service.update_task_by_id(
         user_id=current_user.id, task_id=task_id, data=TaskUpdateRequest(description=message.text)
@@ -162,7 +160,7 @@ async def change_task_priority(
     callback_data: TaskUpdateCallback,
     callback_msg: Message,
     state: FSMContext,
-):
+) -> None:
 
     await state.update_data(
         msg_id=callback_msg.message_id,
@@ -191,7 +189,7 @@ async def process_new_task_priority(
     current_user: User,
     bot: Bot,
     state: FSMContext,
-):
+) -> None:
     data = await state.get_data()
 
     task_id = data["task_id"]
@@ -226,7 +224,7 @@ async def change_task_deadline(
     callback_data: TaskUpdateCallback,
     callback_msg: Message,
     state: FSMContext,
-):
+) -> None:
 
     await state.update_data(
         msg_id=callback_msg.message_id,
@@ -257,7 +255,7 @@ async def process_new_deadline(
     current_user: User,
     bot: Bot,
     state: FSMContext,
-):
+) -> None:
     data = await state.get_data()
 
     task_id = data["task_id"]

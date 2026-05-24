@@ -1,3 +1,5 @@
+from typing import Any
+
 from redis.asyncio import Redis
 
 from src.core.config import settings
@@ -13,18 +15,18 @@ class TokenStorage:
     def __init__(self, redis_client: Redis) -> None:
         self.redis_client = redis_client
 
-    async def save_token(self, user_id: int, token: str):
+    async def save_token(self, user_id: int, token: str) -> None:
         await self.redis_client.set(
             name=self._get_key(user_id), value=token, ex=settings.TOKEN_TTL_SEC
         )
 
-    async def get_token(self, user_id: int):
+    async def get_token(self, user_id: int) -> Any:
         return await self.redis_client.get(self._get_key(user_id))
 
-    async def delete_token(self, user_id: int):
+    async def delete_token(self, user_id: int) -> None:
         await self.redis_client.delete(self._get_key(user_id))
 
-    async def is_authorized(self, user_id: int):
+    async def is_authorized(self, user_id: int) -> bool:
         return bool(await self.redis_client.exists(self._get_key(user_id)))
 
     def _get_key(self, user_id: int) -> str:

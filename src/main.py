@@ -45,7 +45,7 @@ async def on_shutdown(dispatcher: Dispatcher) -> None:
     await redis_client.close()
 
 
-async def main():
+async def main() -> None:
     bot = Bot(token=settings.BOT_TOKEN)
     dp = Dispatcher()
     dp.startup.register(on_startup)

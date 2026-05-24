@@ -18,7 +18,7 @@ async def pagination_archive_tasks(
     task_service: TaskService,
     current_user: User,
     state: FSMContext,
-):
+) -> None:
     page = callback_data.page
     is_archive = callback_data.is_archive
 

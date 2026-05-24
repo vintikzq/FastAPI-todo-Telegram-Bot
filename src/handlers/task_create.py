@@ -1,3 +1,4 @@
+import contextlib
 import logging
 from datetime import datetime
 
@@ -22,7 +23,7 @@ router = Router()
 
 
 @router.message(Command("cancel"), StateFilter(CreateTaskState, UpdateTaskState))
-async def cancel_handler(message: Message, state: FSMContext, bot: Bot):
+async def cancel_handler(message: Message, state: FSMContext, bot: Bot) -> None:
     data = await state.get_data()
     msg_id = data.get("msg_id")
 
@@ -43,7 +44,7 @@ async def cancel_handler(message: Message, state: FSMContext, bot: Bot):
 
 
 @router.message(F.text == MenuButtons.CREATE_TASK)
-async def start_task_creation(message: Message, state: FSMContext):
+async def start_task_creation(message: Message, state: FSMContext) -> None:
     await message.answer(text="Starting task creation", reply_markup=ReplyKeyboardRemove())
 
     sent_msg = await message.answer(
@@ -57,14 +58,12 @@ async def start_task_creation(message: Message, state: FSMContext):
 
 
 @router.message(CreateTaskState.waiting_for_task_name)
-async def process_task_name(message: Message, state: FSMContext, bot: Bot):
+async def process_task_name(message: Message, state: FSMContext, bot: Bot) -> None:
 
     await state.update_data(name=message.text)
 
-    try:
+    with contextlib.suppress(TelegramBadRequest):
         await message.delete()
-    except TelegramBadRequest:
-        pass
 
     data = await state.get_data()
 
@@ -88,7 +87,7 @@ async def process_task_name(message: Message, state: FSMContext, bot: Bot):
 )
 async def process_task_description_skip(
     callback: CallbackQuery, state: FSMContext, callback_msg: Message
-):
+) -> None:
 
     await state.update_data(description=None)
     await callback.answer("Skipped")
@@ -100,13 +99,11 @@ async def process_task_description_skip(
 
 
 @router.message(CreateTaskState.waiting_for_description)
-async def process_task_description(message: Message, state: FSMContext, bot: Bot):
+async def process_task_description(message: Message, state: FSMContext, bot: Bot) -> None:
     await state.update_data(description=message.text)
 
-    try:
+    with contextlib.suppress(TelegramBadRequest):
         await message.delete()
-    except TelegramBadRequest:
-        pass
 
     data = await state.get_data()
 
@@ -130,7 +127,7 @@ async def process_task_priority(
     callback_msg: Message,
     callback_data: TaskPriorityCallback,
     state: FSMContext,
-):
+) -> None:
     await state.update_data(priority=callback_data.value)
 
     await callback.answer()
@@ -150,7 +147,7 @@ async def process_deadline(
     state: FSMContext,
     task_service: TaskService,
     current_user: User,
-):
+) -> None:
     selected, date = await SimpleCalendar().process_selection(callback, callback_data)
 
     if selected:
@@ -168,7 +165,7 @@ async def process_deadline(
 
 async def complete_task_creation(
     state: FSMContext, task_service: TaskService, current_user: User, callback_msg: Message
-):
+) -> None:
     data = await state.get_data()
     task_data = TaskRequest(**data)
     task = await task_service.create_task(current_user.id, task_data)
@@ -177,7 +174,9 @@ async def complete_task_creation(
     await callback_msg.answer("What's next?", reply_markup=get_main_menu_keyboard())
 
 
-async def is_deadline_correct(callback: CallbackQuery, callback_msg: Message, date: datetime):
+async def is_deadline_correct(
+    callback: CallbackQuery, callback_msg: Message, date: datetime
+) -> bool:
     if date.date() < datetime.now().date():
         await callback.answer("The deadline cannot be in the past!", show_alert=True)
         await callback_msg.edit_text(

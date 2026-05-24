@@ -1,4 +1,4 @@
-from aiogram.types import InlineKeyboardButton
+from aiogram.types import InlineKeyboardButton, InlineKeyboardMarkup
 from aiogram.utils.keyboard import InlineKeyboardBuilder
 
 from src.schemas.callbacks import (
@@ -12,7 +12,7 @@ from src.schemas.enums import ActionsNav, ActionsView, TodoPriority, TodoStatus
 from src.schemas.tasks import TaskResponse
 
 
-def get_task_priority_buttons():
+def get_task_priority_buttons() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     for priority in TodoPriority:
         builder.add(
@@ -23,7 +23,7 @@ def get_task_priority_buttons():
     return builder.as_markup(resize_keyboard=True)
 
 
-def skip_button():
+def skip_button() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     builder.add(
         InlineKeyboardButton(text="Skip", callback_data=TaskFormCallBack(action="skip").pack())
@@ -34,7 +34,7 @@ def skip_button():
 
 def get_navigation_buttons(
     tasks: list[TaskResponse], current_page: int, has_next: bool, is_archive: bool = False
-):
+) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     for task in tasks:
         builder.row(
@@ -80,7 +80,7 @@ def get_navigation_buttons(
 
 def get_task_buttons(
     task_id: int, current_page: int, status: TodoStatus | None = None, is_archive: bool = False
-):
+) -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
     if status is not None:
         status_btns = []
@@ -130,7 +130,7 @@ def get_task_buttons(
     return builder.as_markup(resize_keyboard=True)
 
 
-def get_stats_buttons():
+def get_stats_buttons() -> InlineKeyboardMarkup:
     builder = InlineKeyboardBuilder()
 
     builder.add(

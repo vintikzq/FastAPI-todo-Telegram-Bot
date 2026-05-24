@@ -1,3 +1,5 @@
+from typing import Any
+
 import httpx
 
 from src.core.config import settings
@@ -34,7 +36,7 @@ class BaseClient:
         headers: dict | None = None,
         data: dict | None = None,
         params: dict | None = None,
-    ):
+    ) -> Any:
         url = f"{self.base_url.rstrip('/')}/{endpoint.lstrip('/')}"
 
         if user_id:
@@ -65,15 +67,15 @@ class BaseClient:
 
             match status_code:
                 case 404:
-                    raise ResourceNotFoundError()
+                    raise ResourceNotFoundError() from e
                 case 500 | 502 | 503:
-                    raise BackendServerError()
+                    raise BackendServerError() from e
                 case 422:
-                    raise ValidationError()
+                    raise ValidationError() from e
                 case 403:
-                    raise NotAuthorizedError()
+                    raise NotAuthorizedError() from e
                 case _:
-                    raise AppBaseException(f"Unknown API Error: {status_code}")
+                    raise AppBaseException(f"Unknown API Error: {status_code}") from e
 
-        except httpx.ConnectError:
-            raise NetworkConnectionError()
+        except httpx.ConnectError as e:
+            raise NetworkConnectionError() from e
