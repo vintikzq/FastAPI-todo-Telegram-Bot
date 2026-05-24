@@ -1,82 +1,58 @@
-# FastAPI-todo-Telegram-Bot
+# TaskFlow Telegram Bot
 
-An asynchronous, production-ready Telegram client for personal goal and task management, built strictly on **Clean Architecture** principles. This repository serves as the presentation and UI layer for the entire TaskFlow ecosystem, interacting with the **FastAPI-todo-API** backend via a custom fault-tolerant REST client and a secure Silent S2S (Service-to-Server) protocol.
+A Telegram bot client for the TaskFlow task manager. Acts as the user-facing UI for the [FastAPI-todo-API](https://github.com/vintikzq/FastAPI-todo-API) backend.
 
-> 💡 **Ecosystem Architecture Note:** While this repository operates as an autonomous UI client, its root `docker-compose.yml` acts as the primary orchestrator for the entire ecosystem. It is configured to automatically pull and build the neighboring backend repository (`FastAPI-todo-API`) for seamless full-stack deployment.
+This repository also contains the `docker-compose.yml` that brings up the full stack (bot + API + PostgreSQL + Redis) in a single command.
 
-## 🛠️ Tech Stack & Metrics
+## Features
 
-- **Presentation Runtime:** Python 3.12+ (Type Hinting on Core Layers, OOP)
-- **Telegram Framework:** [aiogram 3.28+](https://github.com/aiogram/aiogram) (FSM, Custom Middlewares, Routers, Error Events)
-- **Network & Data Integrity:** HTTPX (Async Client), Pydantic v2, Pydantic Settings v2
-- **Caching Layer:** Redis 7 (Asynchronous JWT token session storage via `aioredis`)
-- **Quality Assurance:** Pytest, pytest-asyncio, pytest-cov (**Total Test Coverage: 90%**)
-- **Orchestration:** Docker & Docker Compose (Multi-container setup with healthcheck propagation)
+- **Task management:** create, view, edit, and delete personal tasks via inline keyboards.
+- **FSM-based forms:** multi-step task creation with name, description, priority, and a calendar-picker deadline.
+- **Pagination:** paginated task list with separate "active" and "archive" views.
+- **Single-message UI:** task list and details are rendered by editing the same message instead of spamming the chat.
+- **Transparent auth:** the bot authenticates with the backend on behalf of the Telegram user via an internal secret. JWT tokens are cached in Redis with a TTL.
+- **Centralized error handling:** API errors (404, 422, 5xx, connection issues) are mapped to user-friendly messages by a global aiogram error router.
 
----
+## Tech Stack
 
-## 🏗️ Architectural Design Patterns
+- **Language:** Python 3.12+
+- **Framework:** [aiogram 3.x](https://github.com/aiogram/aiogram) (FSM, middlewares, routers)
+- **HTTP client:** [HTTPX](https://www.python-httpx.org/) (async)
+- **Cache:** Redis 7 (via `redis.asyncio`) — JWT token storage
+- **Validation:** Pydantic v2, Pydantic Settings v2
+- **Testing:** Pytest, pytest-asyncio, pytest-cov (~90% coverage)
+- **Containerization:** Docker & Docker Compose
 
-### 1. Clean Architecture (Separation of Concerns)
+## Project Structure
 
-The codebase strictly decouples business logic from external delivery frameworks:
+- **src/core/** — settings and custom exceptions.
+- **src/storage/** — Redis-based token storage.
+- **src/states/** — aiogram FSM state declarations.
+- **src/schemas/** — Pydantic models, callback data, and enums.
+- **src/services/** — API client classes (`TaskService`, `AuthService`) built on a shared `BaseClient`.
+- **src/middlewares/** — aiogram middlewares for auth and callback message extraction.
+- **src/keyboards/** — inline keyboard builders.
+- **src/handlers/** — message and callback handlers (commands, task CRUD flows, error handler).
+- **src/main.py** — entry point and dependency wiring.
+- **tests/** — unit tests with mocked HTTP session and Redis.
 
-- **Domain Layer (`src/schemas`, `src/states`):** Pure Pydantic validation models and FSM schemas. All UI presentation logic (HTML card rendering, status-to-emoji mapping, localized date formatting) is encapsulated directly inside the domain DTOs (`TaskResponse`, `TaskStatsResponse`), keeping handlers thin.
-- **Service Layer (`src/services`):** Dedicated boundary for business use cases. Inherits from an abstract `BaseClient` gateway which encapsulates cross-cutting HTTP concerns, global network error mapping (e.g., 404 -> `ResourceNotFoundError`), and automated API session handling.
-- **Presentation Layer (`src/handlers`):** Thin controller-routers. Handlers remain completely decoupled from underlying network implementations, executing actions via injected services.
+## Quick Start (Full Stack)
 
-### 2. UI Paradigm: Hybrid Single Message UI
+This repository's `docker-compose.yml` runs the bot, the API, PostgreSQL, and Redis together.
 
-To eliminate excessive chat pollution while maintaining transactional readability, the system uses a **Hybrid "Canvas"** concept.
+### 1. Clone both repositories
 
-- Core interactive flows (list paginations, details viewing, field updates) happen inside a single volatile canvas message via inline markup updates (`edit_text` / `edit_message_reply_markup`).
-- Text entry states instantly purge raw user keystrokes via `message.delete()`.
-- System milestones (such as creation initializations or cancellation triggers) append explicit fallback notifications to the chat feed to preserve context history.
-
-### 3. Silent S2S Auth Pattern
-
-A secure, transparent cross-service authorization flow is embedded directly into the network pipeline:
-
-- A custom `AuthMiddleware` intercepts incoming updates, isolates the Telegram user context, and passes it to the `AuthService`.
-- If a valid JWT token is missing from the Redis cache or its TTL (`TOKEN_TTL_SEC`) has expired, the service silently resolves authorization by dispatching an internal request to the `/login/telegram` backend route, validated via an `X-Internal-Secret` header.
-- The fresh token is cached back into Redis and injected into the handler data context transparently.
-
-### 4. Centralized Global Exception Handling
-
-System-wide networking and business logic failures are managed at the core router level utilizing `errors_router.errors()` middleware:
-
-- Differentiates exceptions and dynamically maps them to clear, localized UI error indicators.
-- Provides structured logging of error frames along with active session context parameters (`chat_id`, `user_id`, stack traces).
-- Mitigates memory locks by automatically wiping active FSM states on fatal errors (e.g., `NotAuthorizedError`).
-
----
-
-## 📂 Project Structure
-
-- **src/core/** — Settings parsing and centralized application exceptions.
-- **src/storage/** — Redis-backed low-level auth caching engine (`TokenStorage`).
-- **src/states/** — Declarative FSM tracking structures.
-- **src/schemas/** — Pydantic DTO validation matrices, callback data schemas, and HTML text binders.
-- **src/services/** — Network-isolated gateway API interfaces (`TaskService`, `AuthService`).
-- **src/middlewares/** — Pipeline lifecycle interceptors (`AuthMiddleware`, `CallBackMessageMiddleware`).
-- **src/keyboards/** — Factory components for inline canvas building.
-- **src/handlers/** — Abstract message routers and conversational flows.
-- **src/main.py** — Application bootstrapping entry point, lifecycle management, and DI registration.
-- **tests/** — High-fidelity suite isolating network targets and state trackers.
-
----
-
-## 🚀 Quick Start (Full-Stack Orchestration)
-
-This repository serves as the orchestration hub for the full ecosystem, deploying the bot, the backend API, a PostgreSQL container, and a Redis cache.
-
-### 1. Repository Workspace Setup
-
-Ensure that both the backend repository (`FastAPI-todo-API`) and this client repository (`FastAPI-todo-Telegram-Bot`) are cloned into the same parent folder level:
+Both repositories must live next to each other:
 
 ```text
-├── FastAPI-todo-API/           # Backend microservice
-└── FastAPI-todo-Telegram-Bot/  # This repository (Telegram client UI)
+├── FastAPI-todo-API/
+└── FastAPI-todo-Telegram-Bot/
+```
+
+```bash
+git clone https://github.com/vintikzq/FastAPI-todo-API.git
+git clone https://github.com/vintikzq/FastAPI-todo-Telegram-Bot.git
+cd FastAPI-todo-Telegram-Bot
 ```
 
 In the root directory of this bot repository, duplicate the environment layout file:
@@ -90,38 +66,36 @@ cp .env.example .env
 Fill out the required `.env` keys. Example setup:
 
 ```ini
-# PostgreSQL Setup
+# PostgreSQL
 DB_USER=postgres
-DB_PASSWORD=your_secure_postgres_pass
-DB_NAME=taskflow_db
+DB_PASSWORD=your_password
+DB_NAME=tasks
 
-# Client Ecosystem & S2S Authorization
-BOT_TOKEN=1234567890:ABCdefGhIJK...
-INTERNAL_BOT_SECRET=your_super_secret_s2s_validation_key
+# Bot
+BOT_TOKEN=1234567890:ABCdefGhIJK...     # from @BotFather
+INTERNAL_BOT_SECRET=shared_secret       # must match the API
 TOKEN_TTL_SEC=3600
 ```
 
-### 3. Multi-Container Orchestration
-
-Spin up all services in their strict dependency order using a single execution flag from the `FastAPI-todo-Telegram-Bot` directory:
+### 3. Run
 
 ```bash
 docker compose up -d --build
 ```
 
-_Deployment sequence:_ `db` (starts healthcheck validation) -> `redis` (checks connection health) -> `api` (applies Alembic head migrations and mounts server) -> `bot` (starts processing long-polling updates).
+Startup order: `db` → `redis` → `api` (runs Alembic migrations) → `bot` (starts long-polling).
 
 ---
 
-## 🧪 QA Testing Framework
+## Testing
 
-Run the service and base client isolation metrics:
+Run the test suite:
 
 ```bash
 pytest
 ```
 
-Verify the coverage percentage logs:
+With coverage report:
 
 ```bash
 pytest --cov=src --cov-report=term-missing
