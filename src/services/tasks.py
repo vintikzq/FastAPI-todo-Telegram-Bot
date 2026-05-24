@@ -19,35 +19,40 @@ class TaskService(BaseClient):
         super().__init__(session, token_storage)
         self.token_storage = token_storage
 
-    async def get_tasks(self, user_id: int, page: int = 1, limit: int = 5, status: TodoStatus | None = None) -> tuple[list[TaskResponse], bool]:
+    async def get_tasks(
+        self, user_id: int, page: int = 1, limit: int = 5, status: TodoStatus | None = None
+    ) -> tuple[list[TaskResponse], bool]:
         offset = (page - 1) * limit
-        params: dict[str, Any] = {'limit': limit + 1, 'offset': offset}
+        params: dict[str, Any] = {"limit": limit + 1, "offset": offset}
 
         if status is not None:
-            params['status'] = status
+            params["status"] = status
 
-        data = await self._make_request(
-            'get', '/tasks', user_id, params=params)
+        data = await self._make_request("get", "/tasks", user_id, params=params)
         if len(data) > limit:
             return ([TaskResponse(**task) for task in data[:limit]], True)
         return ([TaskResponse(**task) for task in data], False)
 
     async def create_task(self, user_id: int, data: TaskRequest) -> TaskResponse:
-        task = await self._make_request('post', '/tasks', user_id, data=data.model_dump())
+        task = await self._make_request("post", "/tasks", user_id, data=data.model_dump())
         return TaskResponse(**task)
 
     async def get_task_by_id(self, user_id: int, task_id: int) -> TaskResponse:
-        data = await self._make_request('get', f'/tasks/{task_id}', user_id)
+        data = await self._make_request("get", f"/tasks/{task_id}", user_id)
         return TaskResponse(**data)
 
     async def delete_task_by_id(self, user_id: int, task_id: int) -> None:
-        await self._make_request('delete', f'/tasks/{task_id}', user_id)
+        await self._make_request("delete", f"/tasks/{task_id}", user_id)
 
-    async def update_task_by_id(self, user_id: int, task_id: int, data: TaskUpdateRequest) -> TaskResponse:
-        task = await self._make_request('patch', f'/tasks/{task_id}', user_id, data=data.model_dump(exclude_unset=True))
+    async def update_task_by_id(
+        self, user_id: int, task_id: int, data: TaskUpdateRequest
+    ) -> TaskResponse:
+        task = await self._make_request(
+            "patch", f"/tasks/{task_id}", user_id, data=data.model_dump(exclude_unset=True)
+        )
         return TaskResponse(**task)
 
     async def get_stats_counter(self, user_id: int):
-        tasks_stats = await self._make_request('get', '/tasks/stats', user_id)
+        tasks_stats = await self._make_request("get", "/tasks/stats", user_id)
 
         return TaskStatsResponse(**tasks_stats)

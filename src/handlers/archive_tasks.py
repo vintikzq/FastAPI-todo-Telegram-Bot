@@ -7,7 +7,6 @@ from src.schemas.callbacks import TaskPaginatorCallBack
 from src.schemas.enums import ActionsNav, TodoStatus
 from src.services.tasks import TaskService
 
-
 router = Router()
 
 
@@ -18,7 +17,7 @@ async def pagination_archive_tasks(
     callback_msg: Message,
     task_service: TaskService,
     current_user: User,
-    state: FSMContext
+    state: FSMContext,
 ):
     page = callback_data.page
     is_archive = callback_data.is_archive
@@ -31,7 +30,7 @@ async def pagination_archive_tasks(
         state=state,
         is_edit=True,
         is_archive=is_archive,
-        status=TodoStatus.DONE
+        status=TodoStatus.DONE,
     )
 
     await callback.answer()

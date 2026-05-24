@@ -1,5 +1,5 @@
 from collections.abc import Awaitable, Callable
-from typing import Any, Callable
+from typing import Any
 
 from aiogram import BaseMiddleware
 from aiogram.types import CallbackQuery, Message
@@ -16,10 +16,10 @@ class CallBackMessageMiddleware(BaseMiddleware):
         self,
         handler: Callable[[CallbackQuery, dict[str, Any]], Awaitable[Any]],
         event: CallbackQuery,
-        data: dict[str, Any]
+        data: dict[str, Any],
     ) -> Any:
 
         if event.message and isinstance(event.message, Message):
-            data['callback_msg'] = event.message
+            data["callback_msg"] = event.message
 
         return await handler(event, data)

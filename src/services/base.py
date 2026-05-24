@@ -1,7 +1,14 @@
 import httpx
 
 from src.core.config import settings
-from src.core.exceptions import AppBaseException, BackendServerError, NetworkConnectionError, NotAuthorizedError, ResourceNotFoundError, ValidationError
+from src.core.exceptions import (
+    AppBaseException,
+    BackendServerError,
+    NetworkConnectionError,
+    NotAuthorizedError,
+    ResourceNotFoundError,
+    ValidationError,
+)
 from src.storage.tokens import TokenStorage
 
 
@@ -18,21 +25,32 @@ class BaseClient:
         self.session = session
         self.token_storage = token_storage
 
-    async def _make_request(self, method: str, endpoint: str, user_id: int | None = None, is_form: bool = False,
-                            headers: dict | None = None, data: dict | None = None,
-                            params: dict | None = None):
+    async def _make_request(
+        self,
+        method: str,
+        endpoint: str,
+        user_id: int | None = None,
+        is_form: bool = False,
+        headers: dict | None = None,
+        data: dict | None = None,
+        params: dict | None = None,
+    ):
         url = f"{self.base_url.rstrip('/')}/{endpoint.lstrip('/')}"
 
         if user_id:
             token = await self.token_storage.get_token(user_id)
             headers = headers or {}
-            headers['Authorization'] = f"Bearer {token}"
+            headers["Authorization"] = f"Bearer {token}"
 
         try:
             if is_form:
-                response = await self.session.request(method, url, headers=headers, data=data, params=params)
+                response = await self.session.request(
+                    method, url, headers=headers, data=data, params=params
+                )
             else:
-                response = await self.session.request(method, url, headers=headers, json=data, params=params)
+                response = await self.session.request(
+                    method, url, headers=headers, json=data, params=params
+                )
             response.raise_for_status()
 
             if response.status_code == 204:
@@ -57,5 +75,5 @@ class BaseClient:
                 case _:
                     raise AppBaseException(f"Unknown API Error: {status_code}")
 
-        except httpx.ConnectError as e:
+        except httpx.ConnectError:
             raise NetworkConnectionError()

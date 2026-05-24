@@ -3,7 +3,7 @@ from redis.asyncio import Redis
 from src.core.config import settings
 
 
-class TokenStorage():
+class TokenStorage:
     """
     Low-level asynchronous Redis adapter for auth session caching.
 
@@ -14,7 +14,9 @@ class TokenStorage():
         self.redis_client = redis_client
 
     async def save_token(self, user_id: int, token: str):
-        await self.redis_client.set(name=self._get_key(user_id), value=token, ex=settings.TOKEN_TTL_SEC)
+        await self.redis_client.set(
+            name=self._get_key(user_id), value=token, ex=settings.TOKEN_TTL_SEC
+        )
 
     async def get_token(self, user_id: int):
         return await self.redis_client.get(self._get_key(user_id))

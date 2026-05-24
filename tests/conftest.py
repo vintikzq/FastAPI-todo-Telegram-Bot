@@ -1,13 +1,13 @@
 import datetime
 from unittest.mock import AsyncMock, MagicMock
 
+import httpx
+import pytest
 from aiogram import Bot
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.storage.base import StorageKey
 from aiogram.fsm.storage.memory import MemoryStorage
 from aiogram.types import CallbackQuery, Message, User
-import httpx
-import pytest
 
 from src.schemas.enums import TodoPriority, TodoStatus
 from src.schemas.tasks import TaskResponse
@@ -19,9 +19,7 @@ from src.storage.tokens import TokenStorage
 @pytest.fixture()
 async def state():
     storage = MemoryStorage()
-    key = StorageKey(
-        bot_id=1, chat_id=1, user_id=1
-    )
+    key = StorageKey(bot_id=1, chat_id=1, user_id=1)
     fsm_context = FSMContext(storage=storage, key=key)
 
     yield fsm_context
@@ -80,7 +78,9 @@ def message():
 def fake_stats_response():
     mock_response = MagicMock()
 
-    mock_response.format_to_pretty_stats.return_value = "<b>Your statistics:</b>\n\nTotal tasks: 999\nDone tasks: 222\nTasks at work: 777"
+    mock_response.format_to_pretty_stats.return_value = (
+        "<b>Your statistics:</b>\n\nTotal tasks: 999\nDone tasks: 222\nTasks at work: 777"
+    )
 
     return mock_response
 
@@ -98,18 +98,14 @@ def fake_task():
     mock_fake_task = MagicMock(spec=TaskResponse)
     mock_fake_task.id = 1
     mock_fake_task.status = TodoStatus.PENDING
-    mock_fake_task.friendly_format_for_buttons = MagicMock(
-        return_value='Task')
+    mock_fake_task.friendly_format_for_buttons = MagicMock(return_value="Task")
     return mock_fake_task
 
 
 @pytest.fixture()
 async def prepared_update_state(state):
 
-    await state.update_data(
-        task_id=1, page=1,
-        msg_id=1, is_archive=False
-    )
+    await state.update_data(task_id=1, page=1, msg_id=1, is_archive=False)
 
     return state
 
@@ -137,13 +133,13 @@ def request_url():
 @pytest.fixture()
 def task_data():
     return {
-        'id': 1,
-        'name': 'task',
-        'status': TodoStatus.PENDING,
-        'priority': TodoPriority.LOW,
-        'description': None,
-        'due_date': None,
-        'created_at': datetime.date.today().isoformat()
+        "id": 1,
+        "name": "task",
+        "status": TodoStatus.PENDING,
+        "priority": TodoPriority.LOW,
+        "description": None,
+        "due_date": None,
+        "created_at": datetime.date.today().isoformat(),
     }
 
 

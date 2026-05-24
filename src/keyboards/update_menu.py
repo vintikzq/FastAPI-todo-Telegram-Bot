@@ -14,20 +14,19 @@ def get_update_buttons(task_id: int, page: int, is_archive: bool = False):
             InlineKeyboardButton(
                 text=btn.label,
                 callback_data=TaskUpdateCallback(
-                    to_update=btn,
-                    task_id=task_id,
-                    page=page,
-                    is_archive=is_archive).pack()
-            ))
+                    to_update=btn, task_id=task_id, page=page, is_archive=is_archive
+                ).pack(),
+            )
+        )
 
-    buttons.append(InlineKeyboardButton(
-        text="🔙 Back to task",
-        callback_data=TaskPaginatorCallBack(
-            action=ActionsNav.VIEW,
-            page=page,
-            task_id=task_id,
-            is_archive=is_archive).pack()
-    ))
+    buttons.append(
+        InlineKeyboardButton(
+            text="🔙 Back to task",
+            callback_data=TaskPaginatorCallBack(
+                action=ActionsNav.VIEW, page=page, task_id=task_id, is_archive=is_archive
+            ).pack(),
+        )
+    )
     builder.row(*buttons)
 
     builder.adjust(2)

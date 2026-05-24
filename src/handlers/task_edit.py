@@ -1,4 +1,4 @@
-from aiogram import F, Bot, Router
+from aiogram import Bot, F, Router
 from aiogram.exceptions import TelegramBadRequest
 from aiogram.fsm.context import FSMContext
 from aiogram.types import CallbackQuery, Message, User
@@ -20,19 +20,15 @@ router = Router()
 
 @router.callback_query(TaskViewCallback.filter(F.action == ActionsView.UPDATE))
 async def process_update_menu(
-    callback: CallbackQuery,
-    callback_data: TaskViewCallback,
-    callback_msg: Message
+    callback: CallbackQuery, callback_data: TaskViewCallback, callback_msg: Message
 ):
     is_archive = callback_data.is_archive
 
     await callback_msg.edit_text(
         text="Select fields to edit:",
         reply_markup=get_update_buttons(
-            task_id=callback_data.task_id,
-            page=callback_data.page,
-            is_archive=is_archive
-        )
+            task_id=callback_data.task_id, page=callback_data.page, is_archive=is_archive
+        ),
     )
 
     await callback.answer()
@@ -43,20 +39,21 @@ async def change_task_name(
     callback: CallbackQuery,
     callback_data: TaskUpdateCallback,
     callback_msg: Message,
-    state: FSMContext
+    state: FSMContext,
 ):
 
     await state.update_data(
         msg_id=callback_msg.message_id,
         task_id=callback_data.task_id,
         page=callback_data.page,
-        is_archive=callback_data.is_archive
+        is_archive=callback_data.is_archive,
     )
 
-    await callback_msg.edit_text(text="<b>Write new task name:</b>\n\n"
-                                 "<i>Type /cancel to stop the update.</i>",
-                                 parse_mode='HTML',
-                                 reply_markup=None)
+    await callback_msg.edit_text(
+        text="<b>Write new task name:</b>\n\n<i>Type /cancel to stop the update.</i>",
+        parse_mode="HTML",
+        reply_markup=None,
+    )
 
     await state.set_state(UpdateTaskState.waiting_for_new_task_name)
 
@@ -65,18 +62,14 @@ async def change_task_name(
 
 @router.message(UpdateTaskState.waiting_for_new_task_name)
 async def process_new_task_name(
-    message: Message,
-    task_service: TaskService,
-    current_user: User,
-    bot: Bot,
-    state: FSMContext
+    message: Message, task_service: TaskService, current_user: User, bot: Bot, state: FSMContext
 ):
     data = await state.get_data()
 
-    task_id = data['task_id']
-    page = data['page']
-    msg_id = data['msg_id']
-    is_archive = data['is_archive']
+    task_id = data["task_id"]
+    page = data["page"]
+    msg_id = data["msg_id"]
+    is_archive = data["is_archive"]
 
     try:
         await message.delete()
@@ -84,9 +77,7 @@ async def process_new_task_name(
         pass
 
     updated_task = await task_service.update_task_by_id(
-        user_id=current_user.id,
-        task_id=task_id,
-        data=TaskUpdateRequest(name=message.text)
+        user_id=current_user.id, task_id=task_id, data=TaskUpdateRequest(name=message.text)
     )
 
     await render_task_card(
@@ -98,7 +89,7 @@ async def process_new_task_name(
         task=updated_task,
         status=updated_task.status,
         state=state,
-        is_archive=is_archive
+        is_archive=is_archive,
     )
 
     await state.clear()
@@ -109,20 +100,21 @@ async def change_task_description(
     callback: CallbackQuery,
     callback_data: TaskUpdateCallback,
     callback_msg: Message,
-    state: FSMContext
+    state: FSMContext,
 ):
 
     await state.update_data(
         msg_id=callback_msg.message_id,
         task_id=callback_data.task_id,
         page=callback_data.page,
-        is_archive=callback_data.is_archive
+        is_archive=callback_data.is_archive,
     )
 
-    await callback_msg.edit_text(text="<b>Write new task description:</b>\n\n"
-                                 "<i>Type /cancel to stop the update.</i>",
-                                 parse_mode='HTML',
-                                 reply_markup=None)
+    await callback_msg.edit_text(
+        text="<b>Write new task description:</b>\n\n<i>Type /cancel to stop the update.</i>",
+        parse_mode="HTML",
+        reply_markup=None,
+    )
 
     await state.set_state(UpdateTaskState.waiting_for_new_description)
 
@@ -131,18 +123,14 @@ async def change_task_description(
 
 @router.message(UpdateTaskState.waiting_for_new_description)
 async def process_new_task_description(
-    message: Message,
-    task_service: TaskService,
-    current_user: User,
-    bot: Bot,
-    state: FSMContext
+    message: Message, task_service: TaskService, current_user: User, bot: Bot, state: FSMContext
 ):
     data = await state.get_data()
 
-    task_id = data['task_id']
-    page = data['page']
-    msg_id = data['msg_id']
-    is_archive = data['is_archive']
+    task_id = data["task_id"]
+    page = data["page"]
+    msg_id = data["msg_id"]
+    is_archive = data["is_archive"]
 
     try:
         await message.delete()
@@ -150,9 +138,7 @@ async def process_new_task_description(
         pass
 
     updated_task = await task_service.update_task_by_id(
-        user_id=current_user.id,
-        task_id=task_id,
-        data=TaskUpdateRequest(description=message.text)
+        user_id=current_user.id, task_id=task_id, data=TaskUpdateRequest(description=message.text)
     )
 
     await render_task_card(
@@ -164,7 +150,7 @@ async def process_new_task_description(
         task=updated_task,
         status=updated_task.status,
         state=state,
-        is_archive=is_archive
+        is_archive=is_archive,
     )
 
     await state.clear()
@@ -175,20 +161,21 @@ async def change_task_priority(
     callback: CallbackQuery,
     callback_data: TaskUpdateCallback,
     callback_msg: Message,
-    state: FSMContext
+    state: FSMContext,
 ):
 
     await state.update_data(
         msg_id=callback_msg.message_id,
         task_id=callback_data.task_id,
         page=callback_data.page,
-        is_archive=callback_data.is_archive
+        is_archive=callback_data.is_archive,
     )
 
-    await callback_msg.edit_text(text="<b>Select new task priority:</b>\n\n"
-                                 "<i>Type /cancel to stop the update.</i>",
-                                 parse_mode='HTML',
-                                 reply_markup=get_task_priority_buttons())
+    await callback_msg.edit_text(
+        text="<b>Select new task priority:</b>\n\n<i>Type /cancel to stop the update.</i>",
+        parse_mode="HTML",
+        reply_markup=get_task_priority_buttons(),
+    )
 
     await state.set_state(UpdateTaskState.waiting_for_new_task_priority)
 
@@ -203,19 +190,19 @@ async def process_new_task_priority(
     task_service: TaskService,
     current_user: User,
     bot: Bot,
-    state: FSMContext
+    state: FSMContext,
 ):
     data = await state.get_data()
 
-    task_id = data['task_id']
-    page = data['page']
-    msg_id = data['msg_id']
-    is_archive = data['is_archive']
+    task_id = data["task_id"]
+    page = data["page"]
+    msg_id = data["msg_id"]
+    is_archive = data["is_archive"]
 
     updated_task = await task_service.update_task_by_id(
         user_id=current_user.id,
         task_id=task_id,
-        data=TaskUpdateRequest(priority=callback_data.value)
+        data=TaskUpdateRequest(priority=callback_data.value),
     )
 
     await render_task_card(
@@ -227,7 +214,7 @@ async def process_new_task_priority(
         task=updated_task,
         status=updated_task.status,
         state=state,
-        is_archive=is_archive
+        is_archive=is_archive,
     )
 
     await state.clear()
@@ -238,27 +225,30 @@ async def change_task_deadline(
     callback: CallbackQuery,
     callback_data: TaskUpdateCallback,
     callback_msg: Message,
-    state: FSMContext
+    state: FSMContext,
 ):
 
     await state.update_data(
         msg_id=callback_msg.message_id,
         task_id=callback_data.task_id,
         page=callback_data.page,
-        is_archive=callback_data.is_archive
+        is_archive=callback_data.is_archive,
     )
 
-    await callback_msg.edit_text(text="<b>Select new task deadline:</b>\n\n"
-                                 "<i>Type /cancel to stop the update.</i>",
-                                 parse_mode='HTML',
-                                 reply_markup=await SimpleCalendar().start_calendar())
+    await callback_msg.edit_text(
+        text="<b>Select new task deadline:</b>\n\n<i>Type /cancel to stop the update.</i>",
+        parse_mode="HTML",
+        reply_markup=await SimpleCalendar().start_calendar(),
+    )
 
     await state.set_state(UpdateTaskState.waiting_for_new_deadline_date)
 
     await callback.answer()
 
 
-@router.callback_query(SimpleCalendarCallback.filter(), UpdateTaskState.waiting_for_new_deadline_date)
+@router.callback_query(
+    SimpleCalendarCallback.filter(), UpdateTaskState.waiting_for_new_deadline_date
+)
 async def process_new_deadline(
     callback: CallbackQuery,
     callback_data: SimpleCalendarCallback,
@@ -266,14 +256,14 @@ async def process_new_deadline(
     task_service: TaskService,
     current_user: User,
     bot: Bot,
-    state: FSMContext
+    state: FSMContext,
 ):
     data = await state.get_data()
 
-    task_id = data['task_id']
-    page = data['page']
-    msg_id = data['msg_id']
-    is_archive = data['is_archive']
+    task_id = data["task_id"]
+    page = data["page"]
+    msg_id = data["msg_id"]
+    is_archive = data["is_archive"]
 
     selected, date = await SimpleCalendar().process_selection(callback, callback_data)
 
@@ -283,9 +273,8 @@ async def process_new_deadline(
 
         iso_date = date.isoformat()
         updated_task = await task_service.update_task_by_id(
-            user_id=current_user.id,
-            task_id=task_id,
-            data=TaskUpdateRequest(due_date=iso_date))
+            user_id=current_user.id, task_id=task_id, data=TaskUpdateRequest(due_date=iso_date)
+        )
 
         await render_task_card(
             msg_id=msg_id,
@@ -296,15 +285,14 @@ async def process_new_deadline(
             task=updated_task,
             status=updated_task.status,
             state=state,
-            is_archive=is_archive
+            is_archive=is_archive,
         )
         await state.clear()
 
     elif callback_data.act == SimpleCalAct.cancel:
         updated_task = await task_service.update_task_by_id(
-            user_id=current_user.id,
-            task_id=task_id,
-            data=TaskUpdateRequest(due_date=None))
+            user_id=current_user.id, task_id=task_id, data=TaskUpdateRequest(due_date=None)
+        )
 
         await render_task_card(
             msg_id=msg_id,
@@ -315,6 +303,6 @@ async def process_new_deadline(
             task=updated_task,
             status=updated_task.status,
             state=state,
-            is_archive=is_archive
+            is_archive=is_archive,
         )
         await state.clear()

@@ -10,10 +10,10 @@ class TodoStatus(StrEnum):
     @property
     def label(self) -> str:
         return {
-            self.PENDING: 'Pending 🔜',
-            self.IN_PROGRESS: 'In progress ⏳',
-            self.DONE: 'Done ✅'
-        }.get(self, 'Unknown')
+            self.PENDING: "Pending 🔜",
+            self.IN_PROGRESS: "In progress ⏳",
+            self.DONE: "Done ✅",
+        }.get(self, "Unknown")
 
 
 class TodoPriority(StrEnum):
@@ -23,17 +23,15 @@ class TodoPriority(StrEnum):
 
     @property
     def label(self) -> str:
-        return {
-            self.LOW: 'Low ⬇️',
-            self.MEDIUM: 'Medium ⬆️',
-            self.HIGH: 'High ⏫'
-        }.get(self, 'Unknown')
+        return {self.LOW: "Low ⬇️", self.MEDIUM: "Medium ⬆️", self.HIGH: "High ⏫"}.get(
+            self, "Unknown"
+        )
 
 
 class MenuButtons(StrEnum):
-    MY_TASKS = '🗂️ My tasks'
-    CREATE_TASK = '✏️ Create task'
-    STATS = '📊 Statistics'
+    MY_TASKS = "🗂️ My tasks"
+    CREATE_TASK = "✏️ Create task"
+    STATS = "📊 Statistics"
 
 
 class ActionsNav(IntEnum):
@@ -58,8 +56,8 @@ class ActionsUpdate(IntEnum):
     @property
     def label(self) -> str:
         return {
-            self.NAME: 'Name 📝',
-            self.DESCRIPTION: 'Description 📄',
-            self.PRIORITY: 'Priority ⏫',
-            self.DEADLINE: 'Deadline 📅',
-        }.get(self, 'Unknown')
+            self.NAME: "Name 📝",
+            self.DESCRIPTION: "Description 📄",
+            self.PRIORITY: "Priority ⏫",
+            self.DEADLINE: "Deadline 📅",
+        }.get(self, "Unknown")

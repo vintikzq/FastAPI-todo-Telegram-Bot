@@ -23,18 +23,18 @@ class TaskResponse(BaseModel):
     @property
     def emoji_status(self) -> str:
         if self.status == TodoStatus.PENDING:
-            return '🔜'
+            return "🔜"
         if self.status == TodoStatus.IN_PROGRESS:
-            return '⏳'
-        return '✅'
+            return "⏳"
+        return "✅"
 
     @property
     def emoji_priority(self) -> str:
         if self.priority == TodoPriority.LOW:
-            return '⬇️'
+            return "⬇️"
         if self.priority == TodoPriority.MEDIUM:
-            return '⬆️'
-        return '⏫'
+            return "⬆️"
+        return "⏫"
 
     @property
     def not_none_description(self) -> str:
@@ -53,7 +53,7 @@ class TaskResponse(BaseModel):
 
 
 class TaskRequest(BaseModel):
-    model_config = ConfigDict(extra='ignore')
+    model_config = ConfigDict(extra="ignore")
     name: str
     priority: TodoPriority
     description: str | None

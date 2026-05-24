@@ -1,4 +1,5 @@
-from typing import Any, Awaitable, Callable
+from collections.abc import Awaitable, Callable
+from typing import Any
 
 from aiogram import BaseMiddleware
 from aiogram.types import CallbackQuery, Message, TelegramObject
@@ -15,18 +16,18 @@ class AuthMiddleware(BaseMiddleware):
         self,
         handler: Callable[[TelegramObject, dict[str, Any]], Awaitable[Any]],
         event: TelegramObject,
-        data: dict[str, Any]
+        data: dict[str, Any],
     ) -> Any:
         if not isinstance(event, (Message, CallbackQuery)):
             return await handler(event, data)
 
-        auth_service = data['auth_service']
+        auth_service = data["auth_service"]
         user = event.from_user
 
         if not user:
             return
 
-        data['current_user'] = user
+        data["current_user"] = user
         user_id = user.id
         token = await auth_service.get_auth_token(user_id)
 
